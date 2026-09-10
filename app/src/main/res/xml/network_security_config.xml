@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- TEMPORARY manual-e2e only: allows cleartext to the host loopback so the
-     fixture catalog can be served over plain HTTP. REVERT BEFORE COMMIT. -->
-<network-security-config>
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="false">10.0.2.2</domain>
-    </domain-config>
-</network-security-config>

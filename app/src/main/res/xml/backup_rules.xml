@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <include domain="sharedpref" path="." />
+    <!-- Room database (URL-independent progress). -->
     <include domain="database" path="." />
-    <include domain="datastore" path="." />
+    <!-- DataStore settings (server URL) + catalog file cache. -->
+    <include domain="file" path="datastore/" />
     <include domain="file" path="catalog-cache/" />
 </full-backup-content>
