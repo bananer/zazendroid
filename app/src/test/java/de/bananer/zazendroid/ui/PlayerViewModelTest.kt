@@ -42,8 +42,10 @@ private class FakePlaybackManager : PlaybackManager {
     override fun previous() {
         calls += "prev"
     }
+    override fun ensureForegroundService() {
+        calls += "service"
+    }
 }
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class PlayerViewModelTest {
     @Before

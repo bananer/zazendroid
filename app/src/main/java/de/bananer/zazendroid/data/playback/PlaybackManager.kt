@@ -20,12 +20,6 @@ data class PlaybackUiState(
     val hasPrevious: Boolean get() = unitIndex > 0
 }
 
-/**
- * App-scoped playback seam. Playing a course enqueues all its units from
- * [startIndex]; automatic track advance marks each finished unit completed in
- * [de.bananer.zazendroid.data.progress.ProgressRepository] (monotonic).
- * Manual next/previous/seek never marks completion.
- */
 interface PlaybackManager {
     val state: StateFlow<PlaybackUiState>
     fun play(course: Course, startIndex: Int)
@@ -34,4 +28,10 @@ interface PlaybackManager {
     fun seekBy(deltaMs: Long)
     fun next()
     fun previous()
+    /**
+     * Starts the background service (no-op when already running or when the
+     * notification permission is still missing — in that case playback stays
+     * in-activity until permission is granted and this is called again).
+     */
+    fun ensureForegroundService()
 }

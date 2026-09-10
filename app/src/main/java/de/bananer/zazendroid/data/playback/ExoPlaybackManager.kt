@@ -1,7 +1,10 @@
 package de.bananer.zazendroid.data.playback
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -87,7 +90,7 @@ class ExoPlaybackManager(
         )
         player.prepare()
         player.play()
-        ensureService()
+        ensureForegroundService()
         publish()
         updatePolling()
     }
@@ -101,6 +104,18 @@ class ExoPlaybackManager(
         publish()
     }
 
+    override fun ensureForegroundService() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        ContextCompat.startForegroundService(
+            appContext,
+            Intent(appContext, PlaybackService::class.java),
+        )
+    }
     override fun seekBy(deltaMs: Long) {
         player.seekTo((player.currentPosition + deltaMs).coerceAtLeast(0L))
         publish()
@@ -112,13 +127,6 @@ class ExoPlaybackManager(
 
     override fun previous() {
         if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem()
-    }
-
-    private fun ensureService() {
-        ContextCompat.startForegroundService(
-            appContext,
-            Intent(appContext, PlaybackService::class.java),
-        )
     }
 
     private fun publish() {

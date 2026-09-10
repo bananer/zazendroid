@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.core.content.ContextCompat
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -27,20 +28,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-
 @Composable
 fun PlayerScreen(vm: PlayerViewModel) {
     val state by vm.uiState.collectAsState()
 
     if (Build.VERSION.SDK_INT >= 33) {
         val context = LocalContext.current
-        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) vm.ensureForegroundService()
+        }
         LaunchedEffect(Unit) {
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
             ) {
                 launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                vm.ensureForegroundService()
             }
         }
     }
