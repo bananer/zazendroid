@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.room.Room
 import de.bananer.zazendroid.data.catalog.CatalogRepository
 import de.bananer.zazendroid.data.local.ZazenDb
+import de.bananer.zazendroid.data.playback.ExoPlaybackManager
+import de.bananer.zazendroid.data.playback.PlaybackManager
 import de.bananer.zazendroid.data.progress.ContinueQueue
 import de.bananer.zazendroid.data.progress.ProgressRepository
 import de.bananer.zazendroid.data.progress.RoomProgressRepository
@@ -67,4 +69,7 @@ class AppContainer(context: Context) {
     }
 
     val continueQueue: ContinueQueue get() = ContinueQueue
+    val playbackManager: PlaybackManager by lazy {
+        ExoPlaybackManager(appContext, progressRepository, appScope)
+    }
 }
