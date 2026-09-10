@@ -1,5 +1,6 @@
 package de.bananer.zazendroid.data.playback
 
+import androidx.media3.common.Player
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import de.bananer.zazendroid.ZazenApp
@@ -18,6 +19,14 @@ class PlaybackService : MediaSessionService() {
         val player = (manager as? ExoPlaybackManager)?.player
         if (player != null) {
             session = MediaSession.Builder(this, player).build()
+            // MediaSessionService only foregrounds on player transitions it
+            // observes. If playback started before this session attached, that
+            // transition is missed and the system kills us for never calling
+            // startForeground — so force one deterministically.
+            if (player.playbackState != Player.STATE_IDLE) {
+                player.pause()
+                player.play()
+            }
         }
     }
 
