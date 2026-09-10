@@ -88,9 +88,11 @@ class ExoPlaybackManager(
             startIndex.coerceIn(course.units.indices),
             0L,
         )
+        // Service first: the session must exist before the playing transition,
+        // otherwise MediaSessionService never foregrounds and the system kills us.
+        ensureForegroundService()
         player.prepare()
         player.play()
-        ensureForegroundService()
         publish()
         updatePolling()
     }

@@ -1,5 +1,10 @@
 package de.bananer.zazendroid.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,17 +18,32 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import de.bananer.zazendroid.data.catalog.Course
-
 @Composable
 fun CourseDetailScreen(
     vm: CourseDetailViewModel,
     onUnitClick: (course: Course, index: Int) -> Unit,
 ) {
+    // Settle notification permission before any tap can start playback: the
+    // background service cannot foreground without it.
+    if (Build.VERSION.SDK_INT >= 33) {
+        val context = LocalContext.current
+        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+        LaunchedEffect(Unit) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            ) {
+                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
     val state by vm.uiState.collectAsState()
     when (val s = state) {
         is DetailUiState.Loading -> Column(Modifier.fillMaxSize().padding(24.dp)) {
