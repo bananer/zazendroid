@@ -20,6 +20,7 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:label="@string/app_name"
             android:theme="@style/Theme.ZazenDroid"
             android:windowSoftInputMode="adjustResize">
@@ -32,11 +33,7 @@
         <service
             android:name=".data.playback.PlaybackService"
             android:exported="false"
-            android:foregroundServiceType="mediaPlayback">
-            <intent-filter>
-                <action android:name="androidx.media3.session.MediaSessionService" />
-            </intent-filter>
-        </service>
+            android:foregroundServiceType="mediaPlayback" />
     </application>
 
 </manifest>
