@@ -12,8 +12,17 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import de.bananer.zazendroid.ui.CourseDetailScreen
+import de.bananer.zazendroid.ui.CourseDetailViewModel
 import de.bananer.zazendroid.ui.LibraryScreen
 import de.bananer.zazendroid.ui.LibraryViewModel
+import de.bananer.zazendroid.ui.PlayerScreen
+import de.bananer.zazendroid.ui.PlayerViewModel
 import de.bananer.zazendroid.ui.ServerSetupScreen
 import de.bananer.zazendroid.ui.ServerSetupViewModel
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
@@ -32,27 +41,59 @@ class MainActivity : ComponentActivity() {
                         null -> { /* first-launch check pending; blank frame */ }
                         false -> {
                             val vm: ServerSetupViewModel = viewModel(
-                                factory = object : ViewModelProvider.Factory {
-                                    @Suppress("UNCHECKED_CAST")
-                                    override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                                        ServerSetupViewModel(container.serverUrlStore) as T
-                                },
+                                factory = vmFactory { ServerSetupViewModel(container.serverUrlStore) },
                             )
                             ServerSetupScreen(vm)
                         }
                         true -> {
-                            val vm: LibraryViewModel = viewModel(
-                                factory = object : ViewModelProvider.Factory {
-                                    @Suppress("UNCHECKED_CAST")
-                                    override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                                        LibraryViewModel(
-                                            container.catalogRepository,
-                                            container.progressRepository,
-                                            container.serverUrlStore.hasStoredUrlFlow(),
-                                        ) as T
-                                },
-                            )
-                            LibraryScreen(vm)
+                            val nav = rememberNavController()
+                            NavHost(nav, startDestination = "library") {
+                                composable("library") {
+                                    val vm: LibraryViewModel = viewModel(
+                                        factory = vmFactory {
+                                            LibraryViewModel(
+                                                container.catalogRepository,
+                                                container.progressRepository,
+                                                container.serverUrlStore.hasStoredUrlFlow(),
+                                            )
+                                        },
+                                    )
+                                    LibraryScreen(
+                                        vm,
+                                        onCourseClick = { nav.navigate("course/$it") },
+                                        onContinueClick = { course, index ->
+                                            container.playbackManager.play(course, index)
+                                            nav.navigate("player")
+                                        },
+                                    )
+                                }
+                                composable(
+                                    "course/{courseId}",
+                                    arguments = listOf(navArgument("courseId") { type = NavType.StringType }),
+                                ) { entry ->
+                                    val courseId = entry.arguments?.getString("courseId") ?: return@composable
+                                    val vm: CourseDetailViewModel = viewModel(
+                                        key = courseId,
+                                        factory = vmFactory {
+                                            CourseDetailViewModel(
+                                                courseId,
+                                                container.catalogRepository,
+                                                container.progressRepository,
+                                            )
+                                        },
+                                    )
+                                    CourseDetailScreen(vm) { course, index ->
+                                        container.playbackManager.play(course, index)
+                                        nav.navigate("player")
+                                    }
+                                }
+                                composable("player") {
+                                    val vm: PlayerViewModel = viewModel(
+                                        factory = vmFactory { PlayerViewModel(container.playbackManager) },
+                                    )
+                                    PlayerScreen(vm)
+                                }
+                            }
                         }
                     }
                 }
@@ -60,3 +101,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+private fun <T : ViewModel> vmFactory(create: () -> T): ViewModelProvider.Factory =
+    object : ViewModelProvider.Factory {
+        override fun <M : ViewModel> create(modelClass: Class<M>): M = create() as M
+    }

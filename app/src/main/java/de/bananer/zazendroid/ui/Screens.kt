@@ -1,5 +1,6 @@
 package de.bananer.zazendroid.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,8 +21,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import de.bananer.zazendroid.data.catalog.Course
 
-/** Minimal scaffold proving the data layer end to end; player/detail/downloads are out of scope. */
+/** First-launch server setup + library. */
 @Composable
 fun ServerSetupScreen(vm: ServerSetupViewModel) {
     val state by vm.uiState.collectAsState()
@@ -50,7 +52,11 @@ fun ServerSetupScreen(vm: ServerSetupViewModel) {
 }
 
 @Composable
-fun LibraryScreen(vm: LibraryViewModel) {
+fun LibraryScreen(
+    vm: LibraryViewModel,
+    onCourseClick: (courseId: String) -> Unit,
+    onContinueClick: (course: Course, index: Int) -> Unit,
+) {
     val state by vm.uiState.collectAsState()
     when (val s = state) {
         is LibraryUiState.Loading -> Column(Modifier.fillMaxSize().padding(24.dp)) {
@@ -74,12 +80,21 @@ fun LibraryScreen(vm: LibraryViewModel) {
             if (s.nextUp.isNotEmpty()) {
                 item { Text("Continue", style = MaterialTheme.typography.titleMedium) }
                 items(s.nextUp) { next ->
-                    Text("▶ ${next.courseTitle}: ${next.unit.title}")
+                    Text(
+                        "▶ ${next.courseTitle}: ${next.unit.title}",
+                        modifier = Modifier.clickable {
+                            s.courses.find { it.id == next.courseId }?.let { course ->
+                                onContinueClick(course, next.unit.orderIndex)
+                            }
+                        },
+                    )
                 }
             }
             item { Text("Courses", style = MaterialTheme.typography.titleMedium) }
             items(s.courses) { course ->
-                Column {
+                Column(
+                    modifier = Modifier.fillMaxWidth().clickable { onCourseClick(course.id) },
+                ) {
                     Text(course.title, style = MaterialTheme.typography.titleSmall)
                     Text(course.description, style = MaterialTheme.typography.bodySmall)
                     Text("${course.units.size} units", style = MaterialTheme.typography.labelSmall)
