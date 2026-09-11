@@ -24,7 +24,7 @@ class ServerUrlStore(
     constructor(context: Context) : this(context.settingsDataStore)
 
     companion object {
-        const val DEFAULT_DATA_SERVER_URL = "http://10.0.2.2:8042/"
+        const val DEFAULT_DATA_SERVER_URL = "https://example.com/meditation/"
         val KEY_URL = stringPreferencesKey("data_server_url")
 
         fun normalize(url: String): String {
@@ -57,6 +57,11 @@ class ServerUrlStore(
     suspend fun setServerUrl(url: String) {
         val normalized = normalize(url)
         store.edit { it[KEY_URL] = normalized }
+    }
+
+    /** Clears the stored URL, returning the app to first-launch setup. */
+    suspend fun clear() {
+        store.edit { it.remove(KEY_URL) }
     }
 
     /** True when a value was explicitly stored (drives first-launch check). */

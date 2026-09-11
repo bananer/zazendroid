@@ -9,11 +9,13 @@ import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.progress.ContinueQueue
 import de.bananer.zazendroid.data.progress.NextUnit
 import de.bananer.zazendroid.data.progress.ProgressRepository
+import de.bananer.zazendroid.data.settings.ServerUrlStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 sealed interface LibraryUiState {
     data object Loading : LibraryUiState
@@ -31,6 +33,7 @@ class LibraryViewModel(
     catalogRepo: CatalogRepository,
     progressRepo: ProgressRepository,
     hasStoredUrl: Flow<Boolean>,
+    private val serverUrlStore: ServerUrlStore,
 ) : ViewModel() {
     val uiState: StateFlow<LibraryUiState> = combine(
         catalogRepo.catalogFlow,
@@ -49,4 +52,8 @@ class LibraryViewModel(
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryUiState.Loading)
+    /** Clears the stored server URL; the setup gate picks up the change. */
+    fun resetServer() {
+        viewModelScope.launch { serverUrlStore.clear() }
+    }
 }

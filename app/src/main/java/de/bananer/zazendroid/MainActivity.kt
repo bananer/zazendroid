@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -35,6 +36,7 @@ import de.bananer.zazendroid.ui.PlayerScreen
 import de.bananer.zazendroid.ui.PlayerViewModel
 import de.bananer.zazendroid.ui.ServerSetupScreen
 import de.bananer.zazendroid.ui.ServerSetupViewModel
+import de.bananer.zazendroid.ui.SetupUiState
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
 
 class MainActivity : ComponentActivity() {
@@ -54,6 +56,12 @@ class MainActivity : ComponentActivity() {
                             val vm: ServerSetupViewModel = viewModel(
                                 factory = vmFactory { ServerSetupViewModel(container.serverUrlStore) },
                             )
+                            // After a reset the VM still holds its old state
+                            // (Saved/InvalidUrl); start fresh with the default
+                            // prefill. Typing states survive rotation untouched.
+                            if (vm.uiState.value is SetupUiState.Saved) {
+                                LaunchedEffect(Unit) { vm.backToSetup() }
+                            }
                             ServerSetupScreen(vm)
                         }
                         true -> {
@@ -92,6 +100,7 @@ class MainActivity : ComponentActivity() {
                                                     container.catalogRepository,
                                                     container.progressRepository,
                                                     container.serverUrlStore.hasStoredUrlFlow(),
+                                                    container.serverUrlStore,
                                                 )
                                             },
                                         )
@@ -102,6 +111,7 @@ class MainActivity : ComponentActivity() {
                                                 container.playbackManager.play(course, index)
                                                 nav.navigate("player")
                                             },
+                                            onResetServer = { vm.resetServer() },
                                         )
                                     }
                                     composable(

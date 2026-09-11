@@ -35,4 +35,9 @@ class ServerSetupViewModel(private val store: ServerUrlStore) : ViewModel() {
             }
         }
     }
+
+    /** Returns to a fresh [SetupUiState.NeedsUrl] prefilled with the default (e.g. after a reset). */
+    fun backToSetup() {
+        _uiState.value = SetupUiState.NeedsUrl(ServerUrlStore.DEFAULT_DATA_SERVER_URL)
+    }
 }

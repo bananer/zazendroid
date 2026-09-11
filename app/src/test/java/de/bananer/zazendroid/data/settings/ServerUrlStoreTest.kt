@@ -35,6 +35,16 @@ class ServerUrlStoreTest {
         assertTrue(s.hasStoredUrlFlow().first())
         assertTrue(s.isCustomUrl())
     }
+    @Test
+    fun `clear returns to first launch`() = runTest {
+        val dir = Files.createTempDirectory("ds").toFile()
+        val s = store(dir, TestScope(UnconfinedTestDispatcher()))
+        s.setServerUrl("https://example.com/meditation/")
+        assertTrue(s.isCustomUrl())
+        s.clear()
+        assertFalse(s.isCustomUrl())
+        assertEquals(ServerUrlStore.DEFAULT_DATA_SERVER_URL, s.serverUrlFlow().first())
+    }
 
     @Test
     fun `invalid and empty urls throw and persist nothing`() = runTest {

@@ -21,6 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,7 +39,13 @@ import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 @Composable
 fun ServerSetupScreen(vm: ServerSetupViewModel) {
     val state by vm.uiState.collectAsState()
-    var text by remember { mutableStateOf((state as? SetupUiState.NeedsUrl)?.prefill ?: "") }
+    var text by remember(state) {
+        mutableStateOf(
+            (state as? SetupUiState.NeedsUrl)?.prefill
+                ?: (state as? SetupUiState.InvalidUrl)?.prefill
+                ?: "",
+        )
+    }
     val error = state as? SetupUiState.InvalidUrl
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -67,6 +74,7 @@ fun LibraryScreen(
     vm: LibraryViewModel,
     onCourseClick: (courseId: String) -> Unit,
     onContinueClick: (course: Course, index: Int) -> Unit,
+    onResetServer: () -> Unit,
 ) {
     val state by vm.uiState.collectAsState()
     when (val s = state) {
@@ -76,8 +84,14 @@ fun LibraryScreen(
         is LibraryUiState.NeedsServerSetup -> Column(Modifier.fillMaxSize().padding(24.dp)) {
             Text("No server configured.")
         }
-        is LibraryUiState.CatalogError -> Column(Modifier.fillMaxSize().padding(24.dp)) {
+        is LibraryUiState.CatalogError -> Column(
+            Modifier.fillMaxSize().padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Text("Error: ${s.msg}")
+            Button(onClick = onResetServer) {
+                Text("Change server")
+            }
         }
         is LibraryUiState.Ready -> LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
@@ -96,6 +110,9 @@ fun LibraryScreen(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
+                }
+                TextButton(onClick = onResetServer) {
+                    Text("Change server")
                 }
             }
             if (s.nextUp.isNotEmpty()) {
