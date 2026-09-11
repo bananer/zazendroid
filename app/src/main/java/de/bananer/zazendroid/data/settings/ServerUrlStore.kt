@@ -24,7 +24,7 @@ class ServerUrlStore(
     constructor(context: Context) : this(context.settingsDataStore)
 
     companion object {
-        const val DEFAULT_DATA_SERVER_URL = "https://example.com/meditation/"
+        const val DEFAULT_DATA_SERVER_URL = "http://10.0.2.2:8042/"
         val KEY_URL = stringPreferencesKey("data_server_url")
 
         fun normalize(url: String): String {
