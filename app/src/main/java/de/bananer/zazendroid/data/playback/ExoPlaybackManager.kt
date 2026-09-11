@@ -80,6 +80,16 @@ class ExoPlaybackManager(
     }
 
     override fun play(course: Course, startIndex: Int) {
+        queue(course, startIndex)
+        // Service first: it must exist before playback starts so the
+        // notification is up while audio runs in background.
+        ensureForegroundService()
+        player.play()
+        publish()
+        updatePolling()
+    }
+
+    override fun queue(course: Course, startIndex: Int) {
         require(course.units.isNotEmpty()) { "course has no units" }
         this.course = course
         _state.update { it.copy(error = null) }
@@ -88,24 +98,25 @@ class ExoPlaybackManager(
             startIndex.coerceIn(course.units.indices),
             0L,
         )
-        // Service first: the session must exist before the playing transition,
-        // otherwise MediaSessionService never foregrounds and the system kills us.
-        ensureForegroundService()
         player.prepare()
-        player.play()
+        player.pause()
         publish()
         updatePolling()
     }
 
     override fun toggle() {
-        if (player.isPlaying) player.pause() else player.play()
+        if (player.isPlaying) {
+            player.pause()
+        } else {
+            ensureForegroundService()
+            player.play()
+        }
     }
 
     override fun seekTo(positionMs: Long) {
         player.seekTo(positionMs.coerceAtLeast(0L))
         publish()
     }
-
     override fun ensureForegroundService() {
         if (Build.VERSION.SDK_INT >= 33 &&
             ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) !=

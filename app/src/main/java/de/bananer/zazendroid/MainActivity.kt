@@ -120,7 +120,7 @@ class MainActivity : ComponentActivity() {
                                             },
                                         )
                                         CourseDetailScreen(vm) { course, index ->
-                                            container.playbackManager.play(course, index)
+                                            container.playbackManager.queue(course, index)
                                             nav.navigate("player")
                                         }
                                     }

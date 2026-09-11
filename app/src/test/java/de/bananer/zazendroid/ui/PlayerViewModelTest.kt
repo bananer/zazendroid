@@ -29,6 +29,9 @@ private class FakePlaybackManager : PlaybackManager {
     override fun toggle() {
         calls += "toggle"
     }
+    override fun queue(course: Course, startIndex: Int) {
+        calls += "queue:$startIndex"
+    }
     override fun seekTo(positionMs: Long) {
         calls += "seek"
         lastSeek = positionMs

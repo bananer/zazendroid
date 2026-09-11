@@ -23,6 +23,8 @@ data class PlaybackUiState(
 interface PlaybackManager {
     val state: StateFlow<PlaybackUiState>
     fun play(course: Course, startIndex: Int)
+    /** Loads the course queue at [startIndex] and prepares, but does not start playback. */
+    fun queue(course: Course, startIndex: Int)
     fun toggle()
     fun seekTo(positionMs: Long)
     fun seekBy(deltaMs: Long)
