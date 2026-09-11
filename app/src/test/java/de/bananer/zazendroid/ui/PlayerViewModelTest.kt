@@ -39,12 +39,6 @@ private class FakePlaybackManager : PlaybackManager {
     override fun seekBy(deltaMs: Long) {
         calls += "seekBy:$deltaMs"
     }
-    override fun next() {
-        calls += "next"
-    }
-    override fun previous() {
-        calls += "prev"
-    }
     override fun ensureForegroundService() {
         calls += "service"
     }
@@ -68,12 +62,9 @@ class PlayerViewModelTest {
         vm.toggle()
         vm.seekTo(12_000)
         vm.seekBy(-30_000)
-        vm.next()
-        vm.previous()
-        assertEquals(listOf("toggle", "seek", "seekBy:-30000", "next", "prev"), fake.calls)
+        assertEquals(listOf("toggle", "seek", "seekBy:-30000"), fake.calls)
         assertEquals(12_000L, fake.lastSeek)
     }
-
     @Test
     fun `state mirrors manager`() = runTest {
         val fake = FakePlaybackManager()

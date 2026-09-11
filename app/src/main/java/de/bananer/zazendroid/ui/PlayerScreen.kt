@@ -117,7 +117,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        formatMs(state.positionMs),
+                        formatPosition(state.positionMs),
                         color = Color.White.copy(alpha = 0.8f),
                         style = MaterialTheme.typography.labelSmall,
                     )
@@ -135,17 +135,11 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 TextButton(onClick = { vm.seekBy(-30_000) }, enabled = state.unit != null) {
                     Text("-30s", color = Color.White)
                 }
-                TextButton(onClick = { vm.previous() }, enabled = state.hasPrevious) {
-                    Text("‹ Prev", color = Color.White)
-                }
                 Text(
-                    "${if (state.unitCount > 0) state.unitIndex + 1 else 0} / ${state.unitCount}",
+                    "Unit ${if (state.unitCount > 0) state.unitIndex + 1 else 0} of ${state.unitCount}",
                     color = Color.White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.labelSmall,
                 )
-                TextButton(onClick = { vm.next() }, enabled = state.hasNext) {
-                    Text("Next ›", color = Color.White)
-                }
                 TextButton(onClick = { vm.seekBy(30_000) }, enabled = state.unit != null) {
                     Text("+30s", color = Color.White)
                 }

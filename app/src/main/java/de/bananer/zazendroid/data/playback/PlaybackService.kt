@@ -43,11 +43,8 @@ class PlaybackService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val manager = (application as ZazenApp).container.playbackManager
-        when (intent?.action) {
-            ACTION_TOGGLE -> manager.toggle()
-            ACTION_NEXT -> manager.next()
-            ACTION_PREV -> manager.previous()
+        if (intent?.action == ACTION_TOGGLE) {
+            (application as ZazenApp).container.playbackManager.toggle()
         }
         notifyCurrent()
         return START_STICKY
@@ -59,13 +56,12 @@ class PlaybackService : Service() {
         scope.cancel()
         super.onDestroy()
     }
-
     private fun current(): PlaybackUiState =
         (application as ZazenApp).container.playbackManager.state.value
 
     private fun notifyCurrent() {
-        val nm = getSystemService(NotificationManager::class.java)
-        nm.notify(NOTIFICATION_ID, notificationFor(current()))
+        getSystemService(NotificationManager::class.java)
+            .notify(NOTIFICATION_ID, notificationFor(current()))
     }
 
     private fun notificationFor(state: PlaybackUiState): Notification {
@@ -73,29 +69,21 @@ class PlaybackService : Service() {
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        fun action(act: String, label: String, icon: Int): NotificationCompat.Action =
-            NotificationCompat.Action(
-                icon, label,
-                PendingIntent.getService(
-                    this, act.hashCode(), Intent(this, PlaybackService::class.java).setAction(act),
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                ),
-            )
+        val toggle = PendingIntent.getService(
+            this, 1, Intent(this, PlaybackService::class.java).setAction(ACTION_TOGGLE),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(state.unit?.title ?: "ZazenDroid")
             .setContentText(state.courseTitle.ifEmpty { "Meditation" })
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentIntent(content)
             .setOngoing(state.isPlaying)
-            .addAction(action(ACTION_PREV, "Prev", android.R.drawable.ic_media_previous))
             .addAction(
-                action(
-                    ACTION_TOGGLE,
-                    if (state.isPlaying) "Pause" else "Play",
-                    if (state.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                ),
+                if (state.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
+                if (state.isPlaying) "Pause" else "Play",
+                toggle,
             )
-            .addAction(action(ACTION_NEXT, "Next", android.R.drawable.ic_media_next))
             .build()
     }
 
@@ -111,7 +99,5 @@ class PlaybackService : Service() {
         const val CHANNEL_ID = "playback"
         const val NOTIFICATION_ID = 1001
         const val ACTION_TOGGLE = "de.bananer.zazendroid.TOGGLE"
-        const val ACTION_NEXT = "de.bananer.zazendroid.NEXT"
-        const val ACTION_PREV = "de.bananer.zazendroid.PREV"
     }
 }

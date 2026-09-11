@@ -12,6 +12,4 @@ class PlayerViewModel(private val playback: PlaybackManager) : ViewModel() {
     fun toggle() = playback.toggle()
     fun seekTo(ms: Long) = playback.seekTo(ms)
     fun seekBy(deltaMs: Long) = playback.seekBy(deltaMs)
-    fun next() = playback.next()
-    fun previous() = playback.previous()
 }

@@ -15,10 +15,7 @@ data class PlaybackUiState(
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
     val error: String? = null,
-) {
-    val hasNext: Boolean get() = unitIndex < unitCount - 1
-    val hasPrevious: Boolean get() = unitIndex > 0
-}
+)
 
 interface PlaybackManager {
     val state: StateFlow<PlaybackUiState>
@@ -28,8 +25,6 @@ interface PlaybackManager {
     fun toggle()
     fun seekTo(positionMs: Long)
     fun seekBy(deltaMs: Long)
-    fun next()
-    fun previous()
     /**
      * Starts the background service (no-op when already running or when the
      * notification permission is still missing — in that case playback stays

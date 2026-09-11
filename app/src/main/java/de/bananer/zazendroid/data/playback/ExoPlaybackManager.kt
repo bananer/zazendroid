@@ -134,14 +134,6 @@ class ExoPlaybackManager(
         publish()
     }
 
-    override fun next() {
-        if (player.hasNextMediaItem()) player.seekToNextMediaItem()
-    }
-
-    override fun previous() {
-        if (player.hasPreviousMediaItem()) player.seekToPreviousMediaItem()
-    }
-
     private fun publish() {
         val c = course
         val index = if (player.mediaItemCount > 0) player.currentMediaItemIndex else 0
