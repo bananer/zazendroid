@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -92,16 +93,23 @@ fun PlayerScreen(vm: PlayerViewModel) {
             Spacer(Modifier.weight(1f))
             Button(
                 onClick = { vm.toggle() },
-                enabled = state.unit != null || state.single != null,
+                enabled = (state.unit != null || state.single != null) && !state.isBuffering,
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.size(88.dp),
             ) {
-                Icon(
-                    if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                    contentDescription = if (state.isPlaying) "Pause" else "Play",
-                    modifier = Modifier.size(44.dp),
-                )
+                if (state.isBuffering) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(44.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                    )
+                } else {
+                    Icon(
+                        if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = if (state.isPlaying) "Pause" else "Play",
+                        modifier = Modifier.size(44.dp),
+                    )
+                }
             }
             Column {
                 Slider(

@@ -14,6 +14,8 @@ data class PlaybackUiState(
     val unitIndex: Int = 0,
     val unitCount: Int = 0,
     val isPlaying: Boolean = false,
+    /** True while Exo is loading after a play request; UI shows a spinner. */
+    val isBuffering: Boolean = false,
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
     val error: String? = null,

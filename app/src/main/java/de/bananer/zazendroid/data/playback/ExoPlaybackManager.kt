@@ -77,7 +77,7 @@ class ExoPlaybackManager(
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            _state.update { it.copy(error = "Cannot play audio", isPlaying = false) }
+            _state.update { it.copy(error = "Cannot play audio", isPlaying = false, isBuffering = false) }
         }
     }
 
@@ -85,10 +85,7 @@ class ExoPlaybackManager(
         queue(course, startIndex)
         // Service first: it must exist before playback starts so the
         // notification is up while audio runs in background.
-        ensureForegroundService()
-        player.play()
-        publish()
-        updatePolling()
+        startPlayback()
     }
 
     override fun queue(course: Course, startIndex: Int) {
@@ -109,10 +106,7 @@ class ExoPlaybackManager(
 
     override fun playSingle(single: Single) {
         queueSingle(single)
-        ensureForegroundService()
-        player.play()
-        publish()
-        updatePolling()
+        startPlayback()
     }
 
     override fun queueSingle(single: Single) {
@@ -130,9 +124,20 @@ class ExoPlaybackManager(
         if (player.isPlaying) {
             player.pause()
         } else {
-            ensureForegroundService()
-            player.play()
+            startPlayback()
         }
+    }
+
+    /**
+     * Play with immediate UI feedback. Exo reports BUFFERING/READY async, so
+     * [publish] alone leaves a dead frame on slow networks; the optimistic
+     * flag covers the gap until the next player callback corrects it.
+     */
+    private fun startPlayback() {
+        ensureForegroundService()
+        player.play()
+        publish()
+        if (!player.isPlaying) _state.update { it.copy(isBuffering = true) }
     }
 
     override fun seekTo(positionMs: Long) {
@@ -169,6 +174,7 @@ class ExoPlaybackManager(
                 unitIndex = index,
                 unitCount = c?.units?.size ?: if (s != null) 1 else 0,
                 isPlaying = player.isPlaying,
+                isBuffering = !player.isPlaying && player.playbackState == Player.STATE_BUFFERING,
                 positionMs = player.currentPosition.coerceAtLeast(0L),
                 durationMs = player.duration.takeIf { d -> d != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L,
             )
