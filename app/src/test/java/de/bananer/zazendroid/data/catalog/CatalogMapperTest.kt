@@ -14,8 +14,9 @@ private const val FIXTURE = """
   "appInfo": {"appName": "Zazen", "description": "Sit daily.", "version": 3},
   "courses": [
     {"id": "c1", "title": "Basics", "description": "Start here",
+     "authorName": "Diana Winston", "categoryTitle": "Foundations",
      "units": [
-       {"id": "u1", "title": "Breath", "audioUrl": "/audio/breath.mp3", "durationSeconds": 600},
+       {"id": "u1", "title": "Breath", "audioUrl": "/audio/breath.mp3", "durationSeconds": 600, "startOfMeditationInSeconds": 30},
        {"id": "u2", "title": "Body", "audioUrl": "https://cdn.example.com/body.mp3"},
        {"id": "u3", "title": "Sound", "audioUrl": "audio/sound.mp3", "durationSeconds": 300}
      ]},
@@ -40,21 +41,24 @@ class CatalogMapperTest {
         assertEquals("https://example.com/meditation/audio/breath.mp3", basics.units[0].audioUrl)
         assertEquals("https://cdn.example.com/body.mp3", basics.units[1].audioUrl)
         assertEquals("https://example.com/meditation/audio/sound.mp3", basics.units[2].audioUrl)
-        assertEquals("https://cdn.example.com/deep.mp3", catalog.courses[1].units[1].audioUrl)
+        assertEquals("Zazen", catalog.appInfo.appName)
+        assertEquals("Diana Winston", basics.authorName)
+        assertEquals("Foundations", basics.categoryTitle)
+        assertEquals(null, catalog.courses[1].authorName)
+        assertEquals(30L, basics.units[0].startOfMeditationInSeconds)
+        assertEquals(null, basics.units[1].startOfMeditationInSeconds)
         assertEquals(0, basics.units[0].orderIndex)
         assertEquals(1, basics.units[1].orderIndex)
         assertEquals("c1", basics.units[0].courseId)
         assertEquals(600L, basics.units[0].durationSeconds)
         assertNull(basics.units[1].durationSeconds)
-        assertEquals("Zazen", catalog.appInfo.appName)
     }
-
     @Test
     fun `absolute urls pass through unchanged with trailing-slash base`() {
         val dto = CatalogDto(
             appInfo = AppInfoDto("A", "D", 1),
             courses = listOf(
-                CourseDto("c", "T", "D", listOf(UnitDto("u", "U", "https://cdn.example.com/a.mp3"))),
+                CourseDto("c", "T", "D", units = listOf(UnitDto("u", "U", "https://cdn.example.com/a.mp3"))),
             ),
         )
         val catalog = dto.toDomain("https://example.com/meditation/")
@@ -66,12 +70,12 @@ class CatalogMapperTest {
         val dto = CatalogDto(
             appInfo = AppInfoDto("A", "D", 1),
             courses = listOf(
-                CourseDto("", "NoId", "D", listOf(UnitDto("u", "U", "/a.mp3"))),
-                CourseDto("c2", "", "D", listOf(UnitDto("u", "U", "/a.mp3"))),
-                CourseDto("c3", "NoUnits", "D", emptyList()),
+                CourseDto("", "NoId", "D", units = listOf(UnitDto("u", "U", "/a.mp3"))),
+                CourseDto("c2", "", "D", units = listOf(UnitDto("u", "U", "/a.mp3"))),
+                CourseDto("c3", "NoUnits", "D", units = emptyList()),
                 CourseDto(
                     "c4", "AllBadUnits", "D",
-                    listOf(UnitDto("", "U", "/a.mp3"), UnitDto("u", "", "/a.mp3"), UnitDto("u", "U", "")),
+                    units = listOf(UnitDto("", "U", "/a.mp3"), UnitDto("u", "", "/a.mp3"), UnitDto("u", "U", "")),
                 ),
             ),
         )

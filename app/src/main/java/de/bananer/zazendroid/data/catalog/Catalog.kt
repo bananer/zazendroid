@@ -18,6 +18,8 @@ data class Course(
     val id: String,
     val title: String,
     val description: String,
+    val authorName: String? = null,
+    val categoryTitle: String? = null,
     val units: List<Unit>,
 )
 
@@ -28,6 +30,8 @@ data class Unit(
     /** Resolved absolute URL (relative inputs joined against the server base URL). */
     val audioUrl: String,
     val durationSeconds: Long?,
+    /** Point where the guided content starts (intro talk before); null = unknown. */
+    val startOfMeditationInSeconds: Long? = null,
     val orderIndex: Int,
 )
 
@@ -53,18 +57,25 @@ fun CatalogDto.toDomain(baseUrl: String): Catalog {
             if (unit.id.isBlank() || unit.title.isBlank() || unit.audioUrl.isBlank()) {
                 return@mapIndexedNotNull null
             }
-            if (unit.audioUrl.isBlank()) throw IllegalArgumentException("blank audioUrl for unit ${unit.id}")
             Unit(
                 id = unit.id,
                 courseId = course.id,
                 title = unit.title,
                 audioUrl = resolveAudioUrl(baseUrl, unit.audioUrl),
                 durationSeconds = unit.durationSeconds,
+                startOfMeditationInSeconds = unit.startOfMeditationInSeconds,
                 orderIndex = index,
             )
         }
         if (units.isEmpty()) return@mapNotNull null
-        Course(id = course.id, title = course.title, description = course.description, units = units)
+        Course(
+            id = course.id,
+            title = course.title,
+            description = course.description,
+            authorName = course.authorName,
+            categoryTitle = course.categoryTitle,
+            units = units,
+        )
     }
     if (courses.isEmpty()) throw CatalogEmptyException()
     return Catalog(

@@ -13,8 +13,10 @@ import kotlinx.serialization.Serializable
  *   "appInfo": {"appName": "Zazen", "description": "Sit.", "version": 1},
  *   "courses": [
  *     {"id": "c1", "title": "Basics", "description": "Start here",
+ *      "authorName": "Diana Winston", "categoryTitle": "Basics",
  *      "units": [
- *        {"id": "u1", "title": "Breath", "audioUrl": "/audio/breath.mp3", "durationSeconds": 600},
+ *        {"id": "u1", "title": "Breath", "audioUrl": "/audio/breath.mp3",
+ *         "durationSeconds": 600, "startOfMeditationInSeconds": 30},
  *        {"id": "u2", "title": "Body", "audioUrl": "https://cdn.example.com/body.mp3"}
  *      ]}
  *   ]
@@ -29,6 +31,8 @@ import kotlinx.serialization.Serializable
  * - `audioUrl` may be absolute (`https://…`) or server-relative (`/audio/x.mp3`);
  *   the repository resolves relative URLs against the configured server base URL.
  *   This is the only URL rule.
+ * - `authorName`, `categoryTitle`, `startOfMeditationInSeconds` are optional
+ *   display/metadata fields; absent means unknown, never an error.
  */
 @Serializable
 data class CatalogDto(
@@ -49,6 +53,8 @@ data class CourseDto(
     val id: String = "",
     val title: String = "",
     val description: String = "",
+    val authorName: String? = null,
+    val categoryTitle: String? = null,
     val units: List<UnitDto> = emptyList(),
 )
 
@@ -59,4 +65,6 @@ data class UnitDto(
     val audioUrl: String = "",
     @SerialName("durationSeconds")
     val durationSeconds: Long? = null,
+    @SerialName("startOfMeditationInSeconds")
+    val startOfMeditationInSeconds: Long? = null,
 )
