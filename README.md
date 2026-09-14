@@ -43,3 +43,11 @@ the data-server URL, then browse.
 ./gradlew test                   # JVM unit tests (app/src/test)
 ./gradlew connectedDebugAndroidTest   # on emulator/device (app/src/androidTest)
 ```
+
+### CI
+
+`.github/workflows/debug.yml` builds `assembleDebug` and runs `./gradlew test`
+on pushes to `main`, pull requests, and manual dispatch. The debug APK is
+uploaded as the `app-debug` artifact. No keystore or secrets needed — debug
+builds use the SDK-provided debug key. No emulator needed: instrumented tests
+(`connectedDebugAndroidTest`) do not run in CI.
