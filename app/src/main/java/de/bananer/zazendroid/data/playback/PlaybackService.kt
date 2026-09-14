@@ -6,11 +6,12 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import de.bananer.zazendroid.MainActivity
-import de.bananer.zazendroid.ZazenApp
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,6 +19,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import de.bananer.zazendroid.MainActivity
+import de.bananer.zazendroid.R
+import de.bananer.zazendroid.ZazenApp
 
 /**
  * Plain foreground service: keeps audio alive in background behind an ongoing
@@ -76,7 +80,8 @@ class PlaybackService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(state.unit?.title ?: state.single?.title ?: "ZazenDroid")
             .setContentText(state.single?.let { it.authorName ?: it.categoryTitle } ?: state.courseTitle.ifEmpty { "Meditation" })
-            .setSmallIcon(android.R.drawable.ic_media_play)
+            .setSmallIcon(R.drawable.ic_launcher_monochrome)
+            .setLargeIcon(notificationLargeIcon())
             .setContentIntent(content)
             .setOngoing(state.isPlaying)
             .addAction(
@@ -86,13 +91,24 @@ class PlaybackService : Service() {
             )
             .build()
     }
-
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
                 NotificationChannel(CHANNEL_ID, "Playback", NotificationManager.IMPORTANCE_LOW),
             )
         }
+    }
+
+    /**
+     * Full-color blobs for the large icon (alpha kept: gradients survive).
+     * Small icon must stay a flat silhouette — status bar tints it, and the
+     * oily gradients would render as a solid blob.
+     */
+    private fun notificationLargeIcon() = try {
+        ContextCompat.getDrawable(this, R.drawable.ic_launcher_foreground)?.toBitmap()
+            ?: BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
+    } catch (_: Exception) {
+        null
     }
 
     companion object {
