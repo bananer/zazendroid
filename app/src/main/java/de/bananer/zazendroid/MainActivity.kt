@@ -28,6 +28,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -60,6 +63,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val container = (application as ZazenApp).container
+        // Refresh the catalog on every foregrounding (cold start + resume).
+        // Repository keeps warm Ready state until the result; first load shows
+        val refreshObserver = object : DefaultLifecycleObserver {
+            override fun onStart(owner: LifecycleOwner) = container.catalogRepository.refresh()
+        }
+        this.refreshObserver = refreshObserver
+        ProcessLifecycleOwner.get().lifecycle.addObserver(refreshObserver)
         setContent {
             ZazenDroidTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
@@ -219,6 +229,14 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private var refreshObserver: DefaultLifecycleObserver? = null
+
+    override fun onDestroy() {
+        refreshObserver?.let { ProcessLifecycleOwner.get().lifecycle.removeObserver(it) }
+        refreshObserver = null
+        super.onDestroy()
     }
 }
 
