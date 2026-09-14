@@ -151,6 +151,9 @@ class MainActivity : ComponentActivity() {
                                                 container.playbackManager.play(course, index)
                                                 nav.navigate("player")
                                             },
+                                            onPreload = { course, index ->
+                                                container.playbackManager.preload(course, index)
+                                            },
                                             onResetServer = { libraryVm.resetServer() },
                                         )
                                     }
@@ -158,6 +161,9 @@ class MainActivity : ComponentActivity() {
                                         CoursesScreen(
                                             libraryVm,
                                             onCourseClick = { nav.navigate("course/$it") },
+                                            onPreload = { course, index ->
+                                                container.playbackManager.preload(course, index)
+                                            },
                                             onResetServer = { libraryVm.resetServer() },
                                         )
                                     }
@@ -167,6 +173,9 @@ class MainActivity : ComponentActivity() {
                                             onSingleClick = { single ->
                                                 container.playbackManager.queueSingle(single)
                                                 nav.navigate("player")
+                                            },
+                                            onPreloadSingle = { single ->
+                                                container.playbackManager.preloadSingle(single)
                                             },
                                             onResetServer = { libraryVm.resetServer() },
                                         )
@@ -186,10 +195,16 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             },
                                         )
-                                        CourseDetailScreen(vm) { course, index ->
-                                            container.playbackManager.queue(course, index)
-                                            nav.navigate("player")
-                                        }
+                                        CourseDetailScreen(
+                                            vm,
+                                            onUnitClick = { course, index ->
+                                                container.playbackManager.queue(course, index)
+                                                nav.navigate("player")
+                                            },
+                                            onPreload = { course, index ->
+                                                container.playbackManager.preload(course, index)
+                                            },
+                                        )
                                     }
                                     composable("player") {
                                         val vm: PlayerViewModel = viewModel(

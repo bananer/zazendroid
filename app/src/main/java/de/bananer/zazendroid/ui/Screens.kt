@@ -23,6 +23,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -102,6 +103,7 @@ private fun LibraryTabScaffold(
 fun HomeScreen(
     vm: LibraryViewModel,
     onContinueClick: (course: Course, index: Int) -> Unit,
+    onPreload: (course: Course, index: Int) -> Unit,
     onResetServer: () -> Unit,
 ) {
     LibraryTabScaffold(vm, onResetServer) { s ->
@@ -136,6 +138,11 @@ fun HomeScreen(
                 item { Text("Continue", style = MaterialTheme.typography.titleMedium) }
                 items(s.nextUp) { next ->
                     val course = s.courses.find { it.id == next.courseId }
+                    if (course != null && next.unit.orderIndex in course.units.indices) {
+                        LaunchedEffect(next.courseId, next.unit.orderIndex) {
+                            onPreload(course, next.unit.orderIndex)
+                        }
+                    }
                     Card(
                         onClick = {
                             if (course != null) onContinueClick(course, next.unit.orderIndex)
@@ -178,6 +185,7 @@ fun HomeScreen(
 fun CoursesScreen(
     vm: LibraryViewModel,
     onCourseClick: (courseId: String) -> Unit,
+    onPreload: (course: Course, index: Int) -> Unit,
     onResetServer: () -> Unit,
 ) {
     LibraryTabScaffold(vm, onResetServer) { s ->
@@ -187,6 +195,11 @@ fun CoursesScreen(
         ) {
             item { Text("Courses", style = MaterialTheme.typography.titleMedium) }
             items(s.courses) { course ->
+                if (course.units.isNotEmpty()) {
+                    LaunchedEffect(course.id) {
+                        onPreload(course, 0)
+                    }
+                }
                 CourseCard(course) { onCourseClick(course.id) }
             }
         }
@@ -197,6 +210,7 @@ fun CoursesScreen(
 fun SinglesScreen(
     vm: LibraryViewModel,
     onSingleClick: (single: Single) -> Unit,
+    onPreloadSingle: (single: Single) -> Unit,
     onResetServer: () -> Unit,
 ) {
     LibraryTabScaffold(vm, onResetServer) { s ->
@@ -215,6 +229,9 @@ fun SinglesScreen(
                 }
             }
             items(s.singles) { single ->
+                LaunchedEffect(single.id) {
+                    onPreloadSingle(single)
+                }
                 Card(onClick = { onSingleClick(single) }) {
                     Row(
                         modifier = Modifier.fillMaxWidth().padding(16.dp),

@@ -39,6 +39,12 @@ private class FakePlaybackManager : PlaybackManager {
     override fun queueSingle(single: Single) {
         calls += "queueSingle:${single.id}"
     }
+    override fun preload(course: Course, startIndex: Int) {
+        calls += "preload:$startIndex"
+    }
+    override fun preloadSingle(single: Single) {
+        calls += "preloadSingle:${single.id}"
+    }
     override fun seekTo(positionMs: Long) {
         calls += "seek"
         lastSeek = positionMs

@@ -24,11 +24,19 @@ data class PlaybackUiState(
 interface PlaybackManager {
     val state: StateFlow<PlaybackUiState>
     fun play(course: Course, startIndex: Int)
+    fun playSingle(single: Single)
     /** Loads the course queue at [startIndex] and prepares, but does not start playback. */
     fun queue(course: Course, startIndex: Int)
-    fun playSingle(single: Single)
     /** Loads a single and prepares, but does not start playback. Never touches course progress. */
     fun queueSingle(single: Single)
+    /**
+     * Warms an empty idle player (setMediaItems + prepare, stays paused) so a
+     * later tap skips first-buffer. No-op when playing or something is queued;
+     * never publishes. Cold-start only.
+     */
+    fun preload(course: Course, startIndex: Int)
+    /** Same as [preload] for a standalone single. */
+    fun preloadSingle(single: Single)
     fun toggle()
     fun seekTo(positionMs: Long)
     fun seekBy(deltaMs: Long)

@@ -120,6 +120,24 @@ class ExoPlaybackManager(
         updatePolling()
     }
 
+    override fun preload(course: Course, startIndex: Int) {
+        if (player.isPlaying || player.mediaItemCount > 0 || course.units.isEmpty()) return
+        player.setMediaItems(
+            course.units.map { MediaItem.fromUri(it.audioUrl) },
+            startIndex.coerceIn(course.units.indices),
+            0L,
+        )
+        player.prepare()
+        player.pause()
+    }
+
+    override fun preloadSingle(single: Single) {
+        if (player.isPlaying || player.mediaItemCount > 0) return
+        player.setMediaItems(listOf(MediaItem.fromUri(single.audioUrl)), 0, 0L)
+        player.prepare()
+        player.pause()
+    }
+
     override fun toggle() {
         if (player.isPlaying) {
             player.pause()

@@ -37,6 +37,7 @@ import de.bananer.zazendroid.data.catalog.Course
 fun CourseDetailScreen(
     vm: CourseDetailViewModel,
     onUnitClick: (course: Course, index: Int) -> Unit,
+    onPreload: (course: Course, index: Int) -> Unit,
 ) {
     // Settle notification permission before any tap can start playback: the
     // background service cannot foreground without it.
@@ -72,6 +73,9 @@ fun CourseDetailScreen(
                 )
             }
             items(s.rows) { row ->
+                LaunchedEffect(s.course.id, row.unit.orderIndex) {
+                    onPreload(s.course, row.unit.orderIndex)
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth()
                         .clickable { onUnitClick(s.course, row.unit.orderIndex) }
