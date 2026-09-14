@@ -4,6 +4,9 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import de.bananer.zazendroid.data.catalog.CatalogRepository
+import de.bananer.zazendroid.data.favorites.FavoritesRepository
+import de.bananer.zazendroid.data.favorites.RoomFavoritesRepository
+import de.bananer.zazendroid.data.local.MIGRATION_1_2
 import de.bananer.zazendroid.data.local.ZazenDb
 import de.bananer.zazendroid.data.playback.ExoPlaybackManager
 import de.bananer.zazendroid.data.playback.PlaybackManager
@@ -30,7 +33,7 @@ class ZazenApp : Application() {
 }
 
 /**
- * Hand-written manual DI container. Future repositories (favorites, tracking)
+ * Hand-written manual DI container. Future repositories (tracking)
  * are added as lazily-built fields here reusing the [ZazenDb] singleton —
  * no new database, no new DI framework.
  */
@@ -51,11 +54,17 @@ class AppContainer(context: Context) {
     val serverUrlStore: ServerUrlStore by lazy { ServerUrlStore(appContext) }
 
     val db: ZazenDb by lazy {
-        Room.databaseBuilder(appContext, ZazenDb::class.java, "zazen.db").build()
+        Room.databaseBuilder(appContext, ZazenDb::class.java, "zazen.db")
+            .addMigrations(MIGRATION_1_2)
+            .build()
     }
 
     val progressRepository: ProgressRepository by lazy {
         RoomProgressRepository(db.progressDao())
+    }
+
+    val favoritesRepository: FavoritesRepository by lazy {
+        RoomFavoritesRepository(db.favoriteDao())
     }
 
     val catalogRepository: CatalogRepository by lazy {

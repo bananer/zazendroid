@@ -7,6 +7,9 @@ import de.bananer.zazendroid.data.catalog.CatalogState
 import de.bananer.zazendroid.data.catalog.CatalogRepository
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
+import de.bananer.zazendroid.data.favorites.FavoriteEntry
+import de.bananer.zazendroid.data.favorites.FavoriteList
+import de.bananer.zazendroid.data.favorites.FavoritesRepository
 import de.bananer.zazendroid.data.progress.ContinueQueue
 import de.bananer.zazendroid.data.progress.NextUnit
 import de.bananer.zazendroid.data.progress.ProgressRepository
@@ -27,6 +30,7 @@ sealed interface LibraryUiState {
         val courses: List<Course>,
         val singles: List<Single>,
         val nextUp: List<NextUnit>,
+        val favorites: List<FavoriteEntry>,
         val fromCache: Boolean,
     ) : LibraryUiState
 }
@@ -34,14 +38,16 @@ sealed interface LibraryUiState {
 class LibraryViewModel(
     catalogRepo: CatalogRepository,
     progressRepo: ProgressRepository,
+    favoritesRepo: FavoritesRepository,
     hasStoredUrl: Flow<Boolean>,
     private val serverUrlStore: ServerUrlStore,
 ) : ViewModel() {
     val uiState: StateFlow<LibraryUiState> = combine(
         catalogRepo.catalogFlow,
         progressRepo.allProgressFlow(),
+        favoritesRepo.favoritesFlow(),
         hasStoredUrl,
-    ) { catalog, progress, stored ->
+    ) { catalog, progress, favorites, stored ->
         if (!stored) return@combine LibraryUiState.NeedsServerSetup
         when (catalog) {
             is CatalogState.Loading -> LibraryUiState.Loading
@@ -51,6 +57,7 @@ class LibraryViewModel(
                 courses = catalog.catalog.courses,
                 singles = catalog.catalog.singles,
                 nextUp = ContinueQueue.nextUp(catalog.catalog.courses, progress),
+                favorites = FavoriteList.resolve(catalog.catalog.courses, catalog.catalog.singles, favorites),
                 fromCache = catalog.fromCache,
             )
         }

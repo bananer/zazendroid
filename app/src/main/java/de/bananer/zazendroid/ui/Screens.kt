@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
+import de.bananer.zazendroid.data.favorites.FavoriteEntry
 import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 
 /** First-launch server setup + library. */
@@ -103,7 +104,9 @@ private fun LibraryTabScaffold(
 fun HomeScreen(
     vm: LibraryViewModel,
     onContinueClick: (course: Course, index: Int) -> Unit,
+    onFavoriteClick: (entry: FavoriteEntry) -> Unit,
     onPreload: (course: Course, index: Int) -> Unit,
+    onPreloadSingle: (single: Single) -> Unit,
     onResetServer: () -> Unit,
 ) {
     LibraryTabScaffold(vm, onResetServer) { s ->
@@ -175,6 +178,20 @@ fun HomeScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                }
+            }
+            if (s.favorites.isNotEmpty()) {
+                item { Text("Favorites", style = MaterialTheme.typography.titleMedium) }
+                items(s.favorites) { entry ->
+                    when (entry) {
+                        is FavoriteEntry.UnitFavorite -> LaunchedEffect(entry.unit.id) {
+                            onPreload(entry.course, entry.unit.orderIndex)
+                        }
+                        is FavoriteEntry.SingleFavorite -> LaunchedEffect(entry.single.id) {
+                            onPreloadSingle(entry.single)
+                        }
+                    }
+                    FavoriteCard(entry, onClick = { onFavoriteClick(entry) })
                 }
             }
         }
@@ -291,6 +308,43 @@ private fun CourseCard(course: Course, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun FavoriteCard(entry: FavoriteEntry, onClick: () -> Unit) {
+    val (eyebrow, title, sub) = when (entry) {
+        is FavoriteEntry.UnitFavorite ->
+            Triple(
+                entry.course.title,
+                entry.unit.title,
+                "Unit ${entry.unit.orderIndex + 1} of ${entry.course.units.size}",
+            )
+        is FavoriteEntry.SingleFavorite ->
+            Triple(
+                listOfNotNull(entry.single.authorName, entry.single.categoryTitle)
+                    .joinToString(" · ").ifEmpty { "Single" },
+                entry.single.title,
+                formatMs(entry.single.durationSeconds?.times(1000)),
+            )
+    }
+    Card(onClick = onClick) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(eyebrow, style = MaterialTheme.typography.labelLarge)
+                Text(title, style = MaterialTheme.typography.titleLarge)
+                Text(
+                    sub,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(Icons.Filled.PlayArrow, contentDescription = "Play favorite")
         }
     }
 }

@@ -20,9 +20,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -44,6 +47,8 @@ import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 @Composable
 fun PlayerScreen(vm: PlayerViewModel) {
     val state by vm.uiState.collectAsState()
+    val isFavorite by vm.isFavorite.collectAsState()
+    val hasTrack = state.unit != null || state.single != null
 
     if (Build.VERSION.SDK_INT >= 33) {
         val context = LocalContext.current
@@ -77,11 +82,28 @@ fun PlayerScreen(vm: PlayerViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                state.courseTitle,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White.copy(alpha = 0.8f),
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    state.courseTitle,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White.copy(alpha = 0.8f),
+                    modifier = Modifier.weight(1f),
+                )
+                if (hasTrack) {
+                    IconButton(onClick = { vm.toggleFavorite() }) {
+                        Icon(
+                            if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
+                            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                            tint = Color.White,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                }
+            }
             Text(
                 state.unit?.title ?: state.single?.title ?: "Nothing playing",
                 style = MaterialTheme.typography.headlineMedium,
@@ -93,7 +115,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
             Spacer(Modifier.weight(1f))
             Button(
                 onClick = { vm.toggle() },
-                enabled = (state.unit != null || state.single != null) && !state.isBuffering,
+                enabled = hasTrack && !state.isBuffering,
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.size(88.dp),
@@ -118,7 +140,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     onValueChangeFinished = { dragging = false; vm.seekTo(dragPos.toLong()) },
                     valueRange = 0f..range,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = (state.unit != null || state.single != null) && state.durationMs > 0,
+                    enabled = hasTrack && state.durationMs > 0,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -140,7 +162,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = { vm.seekBy(-30_000) }, enabled = state.unit != null || state.single != null) {
+                TextButton(onClick = { vm.seekBy(-30_000) }, enabled = hasTrack) {
                     Text("-30s", color = Color.White)
                 }
                 Text(
@@ -149,7 +171,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     color = Color.White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.labelSmall,
                 )
-                TextButton(onClick = { vm.seekBy(30_000) }, enabled = state.unit != null || state.single != null) {
+                TextButton(onClick = { vm.seekBy(30_000) }, enabled = hasTrack) {
                     Text("+30s", color = Color.White)
                 }
             }

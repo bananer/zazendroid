@@ -37,6 +37,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import de.bananer.zazendroid.data.favorites.FavoriteEntry
 import de.bananer.zazendroid.ui.CourseDetailScreen
 import de.bananer.zazendroid.ui.CourseDetailViewModel
 import de.bananer.zazendroid.ui.CoursesScreen
@@ -102,6 +103,7 @@ class MainActivity : ComponentActivity() {
                                     LibraryViewModel(
                                         container.catalogRepository,
                                         container.progressRepository,
+                                        container.favoritesRepository,
                                         container.serverUrlStore.hasStoredUrlFlow(),
                                         container.serverUrlStore,
                                     )
@@ -161,8 +163,23 @@ class MainActivity : ComponentActivity() {
                                                 container.playbackManager.play(course, index)
                                                 nav.navigate("player")
                                             },
+                                            onFavoriteClick = { entry ->
+                                                when (entry) {
+                                                    is FavoriteEntry.UnitFavorite ->
+                                                        container.playbackManager.queue(
+                                                            entry.course,
+                                                            entry.unit.orderIndex,
+                                                        )
+                                                    is FavoriteEntry.SingleFavorite ->
+                                                        container.playbackManager.queueSingle(entry.single)
+                                                }
+                                                nav.navigate("player")
+                                            },
                                             onPreload = { course, index ->
                                                 container.playbackManager.preload(course, index)
+                                            },
+                                            onPreloadSingle = { single ->
+                                                container.playbackManager.preloadSingle(single)
                                             },
                                             onResetServer = { libraryVm.resetServer() },
                                         )
@@ -218,7 +235,12 @@ class MainActivity : ComponentActivity() {
                                     }
                                     composable("player") {
                                         val vm: PlayerViewModel = viewModel(
-                                            factory = vmFactory { PlayerViewModel(container.playbackManager) },
+                                            factory = vmFactory {
+                                                PlayerViewModel(
+                                                    container.playbackManager,
+                                                    container.favoritesRepository,
+                                                )
+                                            },
                                         )
                                         PlayerScreen(vm)
                                     }
