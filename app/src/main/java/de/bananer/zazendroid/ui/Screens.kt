@@ -32,7 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import de.bananer.zazendroid.R
+import de.bananer.zazendroid.data.catalog.CatalogErrorKind
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.favorites.FavoriteEntry
@@ -54,7 +58,7 @@ fun ServerSetupScreen(vm: ServerSetupViewModel) {
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Data server URL", style = MaterialTheme.typography.headlineSmall)
+        Text(stringResource(R.string.setup_title), style = MaterialTheme.typography.headlineSmall)
         OutlinedTextField(
             value = if (error != null && text.isEmpty()) error.prefill else text,
             onValueChange = { text = it },
@@ -62,12 +66,23 @@ fun ServerSetupScreen(vm: ServerSetupViewModel) {
             singleLine = true,
             isError = error != null,
         )
-        if (error != null) Text(error.reason, color = MaterialTheme.colorScheme.error)
+        if (error != null) {
+            Text(
+                when (error.kind) {
+                    SetupErrorKind.EMPTY -> stringResource(R.string.setup_error_empty)
+                    SetupErrorKind.INVALID -> stringResource(R.string.setup_error_invalid, error.prefill)
+                },
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         Button(
             onClick = { vm.save(text) },
             enabled = state !is SetupUiState.Saving,
         ) {
-            Text(if (state is SetupUiState.Saving) "Saving…" else "Save")
+            Text(
+                if (state is SetupUiState.Saving) stringResource(R.string.action_saving)
+                else stringResource(R.string.action_save),
+            )
         }
     }
 }
@@ -85,15 +100,25 @@ private fun LibraryTabScaffold(
             CircularProgressIndicator()
         }
         is LibraryUiState.NeedsServerSetup -> Column(Modifier.fillMaxSize().padding(24.dp)) {
-            Text("No server configured.")
+            Text(stringResource(R.string.library_no_server))
         }
         is LibraryUiState.CatalogError -> Column(
             Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Error: ${s.msg}")
+            Text(
+                stringResource(
+                    R.string.library_error,
+                    stringResource(
+                        when (s.kind) {
+                            CatalogErrorKind.UNREACHABLE -> R.string.catalog_error_unreachable
+                            CatalogErrorKind.INVALID_CONTENT -> R.string.catalog_error_invalid_content
+                        },
+                    ),
+                ),
+            )
             Button(onClick = onResetServer) {
-                Text("Change server")
+                Text(stringResource(R.string.action_change_server))
             }
         }
         is LibraryUiState.Ready -> content(s)
@@ -123,22 +148,23 @@ fun HomeScreen(
                 )
                 if (s.fromCache) {
                     Text(
-                        "Offline cache",
+                        stringResource(R.string.badge_offline_cache),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
                 Text(
-                    "${s.courses.size} courses · ${s.singles.size} singles",
+                    "${pluralStringResource(R.plurals.courses_count, s.courses.size, s.courses.size)} · " +
+                        pluralStringResource(R.plurals.singles_count, s.singles.size, s.singles.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 TextButton(onClick = onResetServer) {
-                    Text("Change server")
+                    Text(stringResource(R.string.action_change_server))
                 }
             }
             if (s.nextUp.isNotEmpty()) {
-                item { Text("Continue", style = MaterialTheme.typography.titleMedium) }
+                item { Text(stringResource(R.string.heading_continue), style = MaterialTheme.typography.titleMedium) }
                 items(s.nextUp) { next ->
                     val course = s.courses.find { it.id == next.courseId }
                     if (course != null && next.unit.orderIndex in course.units.indices) {
@@ -162,26 +188,30 @@ fun HomeScreen(
                                 Text(next.unit.title, style = MaterialTheme.typography.titleLarge)
                                 if (course != null) {
                                     Text(
-                                        "Unit ${next.unit.orderIndex + 1} of ${course.units.size}",
+                                        stringResource(
+                                            R.string.unit_position,
+                                            next.unit.orderIndex + 1,
+                                            course.units.size,
+                                        ),
                                         style = MaterialTheme.typography.bodySmall,
                                     )
                                 }
                             }
-                            Icon(Icons.Filled.PlayArrow, contentDescription = "Resume")
+                            Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.cd_resume))
                         }
                     }
                 }
             } else {
                 item {
                     Text(
-                        "Nothing in progress yet. Pick a course or a single to begin.",
+                        stringResource(R.string.home_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
             if (s.favorites.isNotEmpty()) {
-                item { Text("Favorites", style = MaterialTheme.typography.titleMedium) }
+                item { Text(stringResource(R.string.heading_favorites), style = MaterialTheme.typography.titleMedium) }
                 items(s.favorites) { entry ->
                     when (entry) {
                         is FavoriteEntry.UnitFavorite -> LaunchedEffect(entry.unit.id) {
@@ -210,7 +240,7 @@ fun CoursesScreen(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item { Text("Courses", style = MaterialTheme.typography.titleMedium) }
+            item { Text(stringResource(R.string.heading_courses), style = MaterialTheme.typography.titleMedium) }
             items(s.courses) { course ->
                 if (course.units.isNotEmpty()) {
                     LaunchedEffect(course.id) {
@@ -235,11 +265,11 @@ fun SinglesScreen(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            item { Text("Singles", style = MaterialTheme.typography.titleMedium) }
+            item { Text(stringResource(R.string.heading_singles), style = MaterialTheme.typography.titleMedium) }
             if (s.singles.isEmpty()) {
                 item {
                     Text(
-                        "No singles on this server yet.",
+                        stringResource(R.string.singles_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -272,7 +302,7 @@ fun SinglesScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
+                        Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.cd_play))
                     }
                 }
             }
@@ -303,7 +333,7 @@ private fun CourseCard(course: Course, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Text(
-                    "${course.units.size} units",
+                    pluralStringResource(R.plurals.units_count, course.units.size, course.units.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -314,17 +344,22 @@ private fun CourseCard(course: Course, onClick: () -> Unit) {
 
 @Composable
 private fun FavoriteCard(entry: FavoriteEntry, onClick: () -> Unit) {
+    val singleFallback = stringResource(R.string.eyebrow_single)
     val (eyebrow, title, sub) = when (entry) {
         is FavoriteEntry.UnitFavorite ->
             Triple(
                 entry.course.title,
                 entry.unit.title,
-                "Unit ${entry.unit.orderIndex + 1} of ${entry.course.units.size}",
+                stringResource(
+                    R.string.unit_position,
+                    entry.unit.orderIndex + 1,
+                    entry.course.units.size,
+                ),
             )
         is FavoriteEntry.SingleFavorite ->
             Triple(
                 listOfNotNull(entry.single.authorName, entry.single.categoryTitle)
-                    .joinToString(" · ").ifEmpty { "Single" },
+                    .joinToString(" · ").ifEmpty { singleFallback },
                 entry.single.title,
                 formatMs(entry.single.durationSeconds?.times(1000)),
             )
@@ -344,7 +379,7 @@ private fun FavoriteCard(entry: FavoriteEntry, onClick: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Icon(Icons.Filled.PlayArrow, contentDescription = "Play favorite")
+            Icon(Icons.Filled.PlayArrow, contentDescription = stringResource(R.string.cd_play_favorite))
         }
     }
 }

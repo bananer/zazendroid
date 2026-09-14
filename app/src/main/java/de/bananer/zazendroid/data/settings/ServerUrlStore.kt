@@ -29,13 +29,13 @@ class ServerUrlStore(
 
         fun normalize(url: String): String {
             val trimmed = url.trim()
-            require(trimmed.isNotEmpty()) { "Server URL must not be empty" }
+            if (trimmed.isEmpty()) throw EmptyServerUrlException()
             val withoutTrailing = trimmed.trimEnd('/')
-            require(withoutTrailing.isNotEmpty()) { "Server URL must not be empty" }
+            if (withoutTrailing.isEmpty()) throw EmptyServerUrlException()
             val parsed = (withoutTrailing + "/").toHttpUrlOrNull()
-                ?: throw IllegalArgumentException("Invalid server URL: $url")
-            require(parsed.scheme == "https" || parsed.scheme == "http") {
-                "Invalid server URL: $url"
+                ?: throw InvalidServerUrlException(url)
+            if (parsed.scheme != "https" && parsed.scheme != "http") {
+                throw InvalidServerUrlException(url)
             }
             return withoutTrailing
         }
@@ -68,3 +68,9 @@ class ServerUrlStore(
     suspend fun isCustomUrl(): Boolean =
         store.data.map { it.contains(KEY_URL) }.first()
 }
+
+/** Empty input: UI resolves to `R.string.setup_error_empty`. */
+class EmptyServerUrlException : IllegalArgumentException("Server URL must not be empty")
+
+/** Unparseable or non-http(s) URL: UI resolves to `R.string.setup_error_invalid`. */
+class InvalidServerUrlException(val input: String) : IllegalArgumentException("Invalid server URL: $input")

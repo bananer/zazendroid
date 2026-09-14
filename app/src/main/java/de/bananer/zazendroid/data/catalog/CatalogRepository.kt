@@ -19,7 +19,13 @@ import okhttp3.Request
 sealed interface CatalogState {
     data object Loading : CatalogState
     data class Ready(val catalog: Catalog, val fromCache: Boolean = false) : CatalogState
-    data class Error(val message: String, val cachedCatalog: Catalog? = null) : CatalogState
+    data class Error(val kind: CatalogErrorKind, val cachedCatalog: Catalog? = null) : CatalogState
+}
+
+/** Resolved at the UI boundary via `catalog_error_unreachable` / `catalog_error_invalid_content`. */
+enum class CatalogErrorKind {
+    UNREACHABLE,
+    INVALID_CONTENT,
 }
 
 /**
@@ -31,11 +37,10 @@ sealed interface CatalogState {
  * (unless a warm [CatalogState.Ready] exists — then it stays until the result),
  * fetch with the client's call timeout, parse with
  * `Json { ignoreUnknownKeys = true; explicitNulls = false }`.
- * Success persists the raw JSON string to `cacheDir/<host-hash>.json` and emits
  * `Ready(fromCache=false)`. Failure (HTTP != 200, timeout, parse error,
  * validation-empty) emits `Ready(fromCache=true)` when a cache file exists, else
- * `Error` with a user-facing message (`"Cannot reach server"`,
- * `"Server returned invalid content"` — never exception text).
+ * `Error` with a [CatalogErrorKind] (UNREACHABLE vs INVALID_CONTENT, resolved
+ * to localized strings at the UI boundary — never exception text).
  *
  * Cache key `<host-hash>` is the first 16 hex chars of SHA-256 over the
  * normalized server URL (per-server caches, no cross-server stale content).
@@ -88,7 +93,7 @@ class CatalogRepository(
             if (cached != null) {
                 _catalogFlow.value = CatalogState.Ready(cached.copy(fromCache = true), fromCache = true)
             } else {
-                _catalogFlow.value = CatalogState.Error(userMessage(e), cachedCatalog = null)
+                _catalogFlow.value = CatalogState.Error(errorKind(e), cachedCatalog = null)
             }
         }
     }
@@ -117,9 +122,9 @@ class CatalogRepository(
         }
     }
 
-    private fun userMessage(e: Exception): String = when (e) {
-        is CatalogParseException, is CatalogEmptyException -> "Server returned invalid content"
-        else -> "Cannot reach server"
+    private fun errorKind(e: Exception): CatalogErrorKind = when (e) {
+        is CatalogParseException, is CatalogEmptyException -> CatalogErrorKind.INVALID_CONTENT
+        else -> CatalogErrorKind.UNREACHABLE
     }
 
     private fun cacheFile(baseUrl: String): File {

@@ -78,23 +78,33 @@ class PlaybackService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(state.unit?.title ?: state.single?.title ?: "ZazenDroid")
-            .setContentText(state.single?.let { it.authorName ?: it.categoryTitle } ?: state.courseTitle.ifEmpty { "Meditation" })
+            .setContentTitle(
+                state.unit?.title ?: state.single?.title ?: getString(R.string.app_name),
+            )
+            .setContentText(
+                state.single?.let { it.authorName ?: it.categoryTitle }
+                    ?: state.courseTitle.ifEmpty { getString(R.string.notif_meditation) },
+            )
             .setSmallIcon(R.drawable.ic_launcher_monochrome)
             .setLargeIcon(notificationLargeIcon())
             .setContentIntent(content)
             .setOngoing(state.isPlaying)
             .addAction(
                 if (state.isPlaying) android.R.drawable.ic_media_pause else android.R.drawable.ic_media_play,
-                if (state.isPlaying) "Pause" else "Play",
+                getString(if (state.isPlaying) R.string.cd_pause else R.string.cd_play),
                 toggle,
             )
             .build()
     }
+
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT >= 26) {
             getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "Playback", NotificationManager.IMPORTANCE_LOW),
+                NotificationChannel(
+                    CHANNEL_ID,
+                    getString(R.string.notif_channel_playback),
+                    NotificationManager.IMPORTANCE_LOW,
+                ),
             )
         }
     }

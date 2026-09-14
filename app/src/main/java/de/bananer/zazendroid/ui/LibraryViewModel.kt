@@ -3,8 +3,9 @@ package de.bananer.zazendroid.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import de.bananer.zazendroid.data.catalog.AppInfo
-import de.bananer.zazendroid.data.catalog.CatalogState
+import de.bananer.zazendroid.data.catalog.CatalogErrorKind
 import de.bananer.zazendroid.data.catalog.CatalogRepository
+import de.bananer.zazendroid.data.catalog.CatalogState
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.favorites.FavoriteEntry
@@ -24,7 +25,7 @@ import kotlinx.coroutines.launch
 sealed interface LibraryUiState {
     data object Loading : LibraryUiState
     data object NeedsServerSetup : LibraryUiState
-    data class CatalogError(val msg: String) : LibraryUiState
+    data class CatalogError(val kind: CatalogErrorKind) : LibraryUiState
     data class Ready(
         val appInfo: AppInfo,
         val courses: List<Course>,
@@ -51,7 +52,7 @@ class LibraryViewModel(
         if (!stored) return@combine LibraryUiState.NeedsServerSetup
         when (catalog) {
             is CatalogState.Loading -> LibraryUiState.Loading
-            is CatalogState.Error -> LibraryUiState.CatalogError(catalog.message)
+            is CatalogState.Error -> LibraryUiState.CatalogError(catalog.kind)
             is CatalogState.Ready -> LibraryUiState.Ready(
                 appInfo = catalog.catalog.appInfo,
                 courses = catalog.catalog.courses,

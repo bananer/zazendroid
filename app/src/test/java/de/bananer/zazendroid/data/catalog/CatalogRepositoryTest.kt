@@ -73,7 +73,7 @@ class CatalogRepositoryTest {
             r.loadNow(base)
             val state = r.catalogFlow.value
             assertTrue(state is CatalogState.Error)
-            assertEquals("Server returned invalid content", (state as CatalogState.Error).message)
+            assertEquals(CatalogErrorKind.INVALID_CONTENT, (state as CatalogState.Error).kind)
         } finally {
             server.stop(0)
         }
@@ -101,6 +101,6 @@ class CatalogRepositoryTest {
         r.loadNow("http://127.0.0.1:9")
         val state = r.catalogFlow.value
         assertTrue(state is CatalogState.Error)
-        assertEquals("Cannot reach server", (state as CatalogState.Error).message)
+        assertEquals(CatalogErrorKind.UNREACHABLE, (state as CatalogState.Error).kind)
     }
 }

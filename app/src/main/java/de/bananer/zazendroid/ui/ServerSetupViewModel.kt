@@ -2,6 +2,7 @@ package de.bananer.zazendroid.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import de.bananer.zazendroid.data.settings.EmptyServerUrlException
 import de.bananer.zazendroid.data.settings.ServerUrlStore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +13,13 @@ sealed interface SetupUiState {
     data class NeedsUrl(val prefill: String) : SetupUiState
     data object Saving : SetupUiState
     data object Saved : SetupUiState
-    data class InvalidUrl(val reason: String, val prefill: String) : SetupUiState
+    data class InvalidUrl(val kind: SetupErrorKind, val prefill: String) : SetupUiState
+}
+
+/** Resolved at the UI boundary via `setup_error_empty` / `setup_error_invalid`. */
+enum class SetupErrorKind {
+    EMPTY,
+    INVALID,
 }
 
 class ServerSetupViewModel(private val store: ServerUrlStore) : ViewModel() {
@@ -29,7 +36,10 @@ class ServerSetupViewModel(private val store: ServerUrlStore) : ViewModel() {
                 _uiState.value = SetupUiState.Saved
             } catch (e: IllegalArgumentException) {
                 _uiState.value = SetupUiState.InvalidUrl(
-                    reason = e.message ?: "Invalid server URL",
+                    kind = when (e) {
+                        is EmptyServerUrlException -> SetupErrorKind.EMPTY
+                        else -> SetupErrorKind.INVALID
+                    },
                     prefill = url,
                 )
             }

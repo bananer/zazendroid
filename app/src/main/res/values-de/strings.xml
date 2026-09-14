@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ZazenDroid</string>
+
+    <!-- Ersteinrichtung Datenserver -->
+    <string name="setup_title">Datenserver-URL</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_saving">Wird gespeichert …</string>
+    <string name="setup_error_empty">Server-URL darf nicht leer sein</string>
+    <string name="setup_error_invalid">Ungültige Server-URL: %1$s</string>
+
+    <!-- Mediathek -->
+    <string name="library_no_server">Kein Server konfiguriert.</string>
+    <string name="library_error">Fehler: %1$s</string>
+    <string name="catalog_error_unreachable">Server nicht erreichbar</string>
+    <string name="catalog_error_invalid_content">Server hat ungültige Inhalte geliefert</string>
+    <string name="action_change_server">Server wechseln</string>
+    <string name="badge_offline_cache">Offline-Cache</string>
+    <string name="heading_continue">Weiter</string>
+    <string name="heading_favorites">Favoriten</string>
+    <string name="heading_courses">Kurse</string>
+    <string name="heading_singles">Singles</string>
+    <string name="unit_position">Einheit %1$d von %2$d</string>
+    <string name="home_empty">Noch nichts begonnen. Wähle einen Kurs oder ein Single.</string>
+    <string name="singles_empty">Noch keine Singles auf diesem Server.</string>
+    <string name="eyebrow_single">Single</string>
+
+    <!-- Detail -->
+    <string name="detail_missing">Kurs nicht gefunden.</string>
+
+    <!-- Player -->
+    <string name="player_nothing">Keine Wiedergabe</string>
+    <string name="player_error_audio">Audio kann nicht abgespielt werden</string>
+    <string name="player_single_label">Single</string>
+
+    <!-- Navigation -->
+    <string name="tab_home">Start</string>
+    <string name="tab_courses">Kurse</string>
+    <string name="tab_singles">Singles</string>
+    <string name="nav_course">Kurs</string>
+    <string name="nav_now_playing">Läuft gerade</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_resume">Fortsetzen</string>
+    <string name="cd_play">Abspielen</string>
+    <string name="cd_pause">Pause</string>
+    <string name="cd_play_favorite">Favorit abspielen</string>
+    <string name="cd_completed">Abgeschlossen</string>
+    <string name="cd_back">Zurück</string>
+    <string name="cd_add_favorite">Zu Favoriten hinzufügen</string>
+    <string name="cd_remove_favorite">Aus Favoriten entfernen</string>
+
+    <!-- Wiedergabe-Benachrichtigung -->
+    <string name="notif_meditation">Meditation</string>
+    <string name="notif_channel_playback">Wiedergabe</string>
+</resources>

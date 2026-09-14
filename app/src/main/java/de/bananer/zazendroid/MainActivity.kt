@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,12 +52,12 @@ import de.bananer.zazendroid.ui.SetupUiState
 import de.bananer.zazendroid.ui.SinglesScreen
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
 
-private data class Tab(val route: String, val label: String, val icon: ImageVector)
+private data class Tab(val route: String, val labelRes: Int, val icon: ImageVector)
 
 private val TABS = listOf(
-    Tab("home", "Home", Icons.Filled.Home),
-    Tab("courses", "Courses", Icons.Filled.List),
-    Tab("singles", "Singles", Icons.Filled.PlayArrow),
+    Tab("home", R.string.tab_home, Icons.Filled.Home),
+    Tab("courses", R.string.tab_courses, Icons.Filled.List),
+    Tab("singles", R.string.tab_singles, Icons.Filled.PlayArrow),
 )
 
 class MainActivity : ComponentActivity() {
@@ -118,15 +119,18 @@ class MainActivity : ComponentActivity() {
                                             title = {
                                                 Text(
                                                     when {
-                                                        route.startsWith("course/") -> "Course"
-                                                        route == "player" -> "Now playing"
+                                                        route.startsWith("course/") -> stringResource(R.string.nav_course)
+                                                        route == "player" -> stringResource(R.string.nav_now_playing)
                                                         else -> ""
                                                     },
                                                 )
                                             },
                                             navigationIcon = {
                                                 IconButton(onClick = { nav.navigateUp() }) {
-                                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                                                    Icon(
+                                                        Icons.AutoMirrored.Filled.ArrowBack,
+                                                        stringResource(R.string.cd_back),
+                                                    )
                                                 }
                                             },
                                         )
@@ -147,8 +151,8 @@ class MainActivity : ComponentActivity() {
                                                             restoreState = true
                                                         }
                                                     },
-                                                    icon = { Icon(tab.icon, tab.label) },
-                                                    label = { Text(tab.label) },
+                                                    icon = { Icon(tab.icon, stringResource(tab.labelRes)) },
+                                                    label = { Text(stringResource(tab.labelRes)) },
                                                 )
                                             }
                                         }

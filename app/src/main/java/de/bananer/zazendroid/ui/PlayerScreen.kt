@@ -41,8 +41,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import de.bananer.zazendroid.R
+import de.bananer.zazendroid.data.playback.PlaybackError
 import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 @Composable
 fun PlayerScreen(vm: PlayerViewModel) {
@@ -97,7 +100,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     IconButton(onClick = { vm.toggleFavorite() }) {
                         Icon(
                             if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
-                            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                            contentDescription = if (isFavorite) stringResource(R.string.cd_remove_favorite) else stringResource(R.string.cd_add_favorite),
                             tint = Color.White,
                             modifier = Modifier.size(28.dp),
                         )
@@ -105,12 +108,12 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 }
             }
             Text(
-                state.unit?.title ?: state.single?.title ?: "Nothing playing",
+                state.unit?.title ?: state.single?.title ?: stringResource(R.string.player_nothing),
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
             )
-            if (state.error != null) {
-                Text(state.error!!, color = MaterialTheme.colorScheme.error)
+            if (state.error == PlaybackError.AUDIO_UNAVAILABLE) {
+                Text(stringResource(R.string.player_error_audio), color = MaterialTheme.colorScheme.error)
             }
             Spacer(Modifier.weight(1f))
             Button(
@@ -128,7 +131,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 } else {
                     Icon(
                         if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-                        contentDescription = if (state.isPlaying) "Pause" else "Play",
+                        contentDescription = if (state.isPlaying) stringResource(R.string.cd_pause) else stringResource(R.string.cd_play),
                         modifier = Modifier.size(44.dp),
                     )
                 }
@@ -166,8 +169,12 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     Text("-30s", color = Color.White)
                 }
                 Text(
-                    if (state.single != null) "Single"
-                    else "Unit ${if (state.unitCount > 0) state.unitIndex + 1 else 0} of ${state.unitCount}",
+                    if (state.single != null) stringResource(R.string.player_single_label)
+                    else stringResource(
+                        R.string.unit_position,
+                        if (state.unitCount > 0) state.unitIndex + 1 else 0,
+                        state.unitCount,
+                    ),
                     color = Color.White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.labelSmall,
                 )

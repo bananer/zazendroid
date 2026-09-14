@@ -30,8 +30,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import de.bananer.zazendroid.R
 import de.bananer.zazendroid.data.catalog.Course
 @Composable
 fun CourseDetailScreen(
@@ -58,7 +60,7 @@ fun CourseDetailScreen(
             CircularProgressIndicator()
         }
         is DetailUiState.Missing -> Column(Modifier.fillMaxSize().padding(24.dp)) {
-            Text("Course not found.")
+            Text(stringResource(R.string.detail_missing))
         }
         is DetailUiState.Ready -> LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
@@ -85,7 +87,7 @@ fun CourseDetailScreen(
                     if (row.completed) {
                         Icon(
                             Icons.Filled.CheckCircle,
-                            contentDescription = "Completed",
+                            contentDescription = stringResource(R.string.cd_completed),
                             tint = MaterialTheme.colorScheme.tertiary,
                         )
                     } else {

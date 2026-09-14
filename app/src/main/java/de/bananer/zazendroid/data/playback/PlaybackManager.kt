@@ -18,8 +18,13 @@ data class PlaybackUiState(
     val isBuffering: Boolean = false,
     val positionMs: Long = 0L,
     val durationMs: Long = 0L,
-    val error: String? = null,
+    /** Set on player failure; UI resolves to `R.string.player_error_audio`. */
+    val error: PlaybackError? = null,
 )
+
+enum class PlaybackError {
+    AUDIO_UNAVAILABLE,
+}
 
 interface PlaybackManager {
     val state: StateFlow<PlaybackUiState>

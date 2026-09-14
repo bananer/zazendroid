@@ -77,7 +77,7 @@ class ExoPlaybackManager(
         }
 
         override fun onPlayerError(error: PlaybackException) {
-            _state.update { it.copy(error = "Cannot play audio", isPlaying = false, isBuffering = false) }
+            _state.update { it.copy(error = PlaybackError.AUDIO_UNAVAILABLE, isPlaying = false, isBuffering = false) }
         }
     }
 

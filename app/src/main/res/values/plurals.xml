@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <plurals name="courses_count">
+        <item quantity="one">%d course</item>
+        <item quantity="other">%d courses</item>
+    </plurals>
+    <plurals name="singles_count">
+        <item quantity="one">%d single</item>
+        <item quantity="other">%d singles</item>
+    </plurals>
+    <plurals name="units_count">
+        <item quantity="one">%d unit</item>
+        <item quantity="other">%d units</item>
+    </plurals>
+</resources>
