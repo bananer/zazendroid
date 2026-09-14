@@ -6,6 +6,7 @@ import de.bananer.zazendroid.data.catalog.AppInfo
 import de.bananer.zazendroid.data.catalog.CatalogState
 import de.bananer.zazendroid.data.catalog.CatalogRepository
 import de.bananer.zazendroid.data.catalog.Course
+import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.progress.ContinueQueue
 import de.bananer.zazendroid.data.progress.NextUnit
 import de.bananer.zazendroid.data.progress.ProgressRepository
@@ -24,6 +25,7 @@ sealed interface LibraryUiState {
     data class Ready(
         val appInfo: AppInfo,
         val courses: List<Course>,
+        val singles: List<Single>,
         val nextUp: List<NextUnit>,
         val fromCache: Boolean,
     ) : LibraryUiState
@@ -47,6 +49,7 @@ class LibraryViewModel(
             is CatalogState.Ready -> LibraryUiState.Ready(
                 appInfo = catalog.catalog.appInfo,
                 courses = catalog.catalog.courses,
+                singles = catalog.catalog.singles,
                 nextUp = ContinueQueue.nextUp(catalog.catalog.courses, progress),
                 fromCache = catalog.fromCache,
             )

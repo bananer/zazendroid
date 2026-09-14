@@ -24,7 +24,21 @@ private const val FIXTURE = """
      "units": [
        {"id": "s1", "title": "Drift", "audioUrl": "/audio/drift.mp3"},
        {"id": "s2", "title": "Deep", "audioUrl": "https://cdn.example.com/deep.mp3", "durationSeconds": 900}
+     ]},
+    {"id": "c3", "title": "Only bad", "description": "Rest",
+     "units": [
+       {"id": "", "title": "Bad", "audioUrl": "/audio/bad.mp3"}
      ]}
+  ],
+  "singles": [
+    {"id": "s1", "title": "Quick Breath", "description": "Reset fast",
+     "authorName": "Diana Winston", "categoryTitle": "Quick practices",
+     "durationSeconds": 300, "audioUrl": "/audio/quick-breath.mp3"},
+    {"id": "s2", "title": "Absolute Calm", "description": "Slow down",
+     "audioUrl": "https://cdn.example.com/calm.mp3"},
+    {"id": "", "title": "Bad", "audioUrl": "/audio/bad.mp3"},
+    {"id": "s3", "title": "", "audioUrl": "/audio/bad.mp3"},
+    {"id": "s4", "title": "Silent", "audioUrl": ""}
   ]
 }
 """
@@ -52,6 +66,17 @@ class CatalogMapperTest {
         assertEquals("c1", basics.units[0].courseId)
         assertEquals(600L, basics.units[0].durationSeconds)
         assertNull(basics.units[1].durationSeconds)
+        assertEquals(2, catalog.singles.size)
+        val quick = catalog.singles[0]
+        assertEquals("s1", quick.id)
+        assertEquals("Quick Breath", quick.title)
+        assertEquals("Reset fast", quick.description)
+        assertEquals("Diana Winston", quick.authorName)
+        assertEquals("Quick practices", quick.categoryTitle)
+        assertEquals(300L, quick.durationSeconds)
+        assertEquals("https://example.com/meditation/audio/quick-breath.mp3", quick.audioUrl)
+        assertEquals("https://cdn.example.com/calm.mp3", catalog.singles[1].audioUrl)
+        assertNull(catalog.singles[1].durationSeconds)
     }
     @Test
     fun `absolute urls pass through unchanged with trailing-slash base`() {
@@ -78,6 +103,11 @@ class CatalogMapperTest {
                     units = listOf(UnitDto("", "U", "/a.mp3"), UnitDto("u", "", "/a.mp3"), UnitDto("u", "U", "")),
                 ),
             ),
+            singles = listOf(
+                SingleDto("", "NoId", "D", audioUrl = "/a.mp3"),
+                SingleDto("s2", "", "D", audioUrl = "/a.mp3"),
+                SingleDto("s3", "NoAudio", "D", audioUrl = ""),
+            ),
         )
         try {
             dto.toDomain("https://example.com")
@@ -85,6 +115,18 @@ class CatalogMapperTest {
         } catch (e: CatalogEmptyException) {
             // expected
         }
+    }
+
+    @Test
+    fun `singles-only catalog is valid`() {
+        val dto = CatalogDto(
+            appInfo = AppInfoDto("A", "D", 1),
+            singles = listOf(SingleDto("s1", "Quick", "Fast reset", audioUrl = "/a.mp3")),
+        )
+        val catalog = dto.toDomain("https://example.com")
+        assertEquals(0, catalog.courses.size)
+        assertEquals(1, catalog.singles.size)
+        assertEquals("https://example.com/a.mp3", catalog.singles[0].audioUrl)
     }
 
     @Test

@@ -12,6 +12,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import de.bananer.zazendroid.data.catalog.Course
+import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.progress.ProgressRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -37,6 +38,7 @@ class ExoPlaybackManager(
     override val state: StateFlow<PlaybackUiState> = _state.asStateFlow()
 
     private var course: Course? = null
+    private var single: Single? = null
     private var pollJob: Job? = null
 
     val player: ExoPlayer by lazy {
@@ -92,12 +94,32 @@ class ExoPlaybackManager(
     override fun queue(course: Course, startIndex: Int) {
         require(course.units.isNotEmpty()) { "course has no units" }
         this.course = course
+        this.single = null
         _state.update { it.copy(error = null) }
         player.setMediaItems(
             course.units.map { MediaItem.fromUri(it.audioUrl) },
             startIndex.coerceIn(course.units.indices),
             0L,
         )
+        player.prepare()
+        player.pause()
+        publish()
+        updatePolling()
+    }
+
+    override fun playSingle(single: Single) {
+        queueSingle(single)
+        ensureForegroundService()
+        player.play()
+        publish()
+        updatePolling()
+    }
+
+    override fun queueSingle(single: Single) {
+        this.course = null
+        this.single = single
+        _state.update { it.copy(error = null) }
+        player.setMediaItems(listOf(MediaItem.fromUri(single.audioUrl)), 0, 0L)
         player.prepare()
         player.pause()
         publish()
@@ -136,14 +158,16 @@ class ExoPlaybackManager(
 
     private fun publish() {
         val c = course
+        val s = single
         val index = if (player.mediaItemCount > 0) player.currentMediaItemIndex else 0
         _state.update {
             it.copy(
-                courseId = c?.id,
-                courseTitle = c?.title ?: "",
+                courseId = c?.id ?: s?.id,
+                courseTitle = c?.title ?: s?.categoryTitle ?: s?.authorName ?: "",
                 unit = c?.units?.getOrNull(index),
+                single = s,
                 unitIndex = index,
-                unitCount = c?.units?.size ?: 0,
+                unitCount = c?.units?.size ?: if (s != null) 1 else 0,
                 isPlaying = player.isPlaying,
                 positionMs = player.currentPosition.coerceAtLeast(0L),
                 durationMs = player.duration.takeIf { d -> d != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L,

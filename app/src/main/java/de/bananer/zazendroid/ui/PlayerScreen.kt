@@ -82,7 +82,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 color = Color.White.copy(alpha = 0.8f),
             )
             Text(
-                state.unit?.title ?: "Nothing playing",
+                state.unit?.title ?: state.single?.title ?: "Nothing playing",
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
             )
@@ -92,7 +92,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
             Spacer(Modifier.weight(1f))
             Button(
                 onClick = { vm.toggle() },
-                enabled = state.unit != null,
+                enabled = state.unit != null || state.single != null,
                 shape = CircleShape,
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.size(88.dp),
@@ -110,7 +110,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     onValueChangeFinished = { dragging = false; vm.seekTo(dragPos.toLong()) },
                     valueRange = 0f..range,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = state.unit != null && state.durationMs > 0,
+                    enabled = (state.unit != null || state.single != null) && state.durationMs > 0,
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -132,15 +132,16 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                TextButton(onClick = { vm.seekBy(-30_000) }, enabled = state.unit != null) {
+                TextButton(onClick = { vm.seekBy(-30_000) }, enabled = state.unit != null || state.single != null) {
                     Text("-30s", color = Color.White)
                 }
                 Text(
-                    "Unit ${if (state.unitCount > 0) state.unitIndex + 1 else 0} of ${state.unitCount}",
+                    if (state.single != null) "Single"
+                    else "Unit ${if (state.unitCount > 0) state.unitIndex + 1 else 0} of ${state.unitCount}",
                     color = Color.White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.labelSmall,
                 )
-                TextButton(onClick = { vm.seekBy(30_000) }, enabled = state.unit != null) {
+                TextButton(onClick = { vm.seekBy(30_000) }, enabled = state.unit != null || state.single != null) {
                     Text("+30s", color = Color.White)
                 }
             }

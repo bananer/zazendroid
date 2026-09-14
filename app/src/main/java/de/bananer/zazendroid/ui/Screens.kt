@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import de.bananer.zazendroid.data.catalog.Course
+import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 
 /** First-launch server setup + library. */
@@ -69,12 +70,12 @@ fun ServerSetupScreen(vm: ServerSetupViewModel) {
     }
 }
 
+/** Non-Ready library states render identically on every tab. */
 @Composable
-fun LibraryScreen(
+private fun LibraryTabScaffold(
     vm: LibraryViewModel,
-    onCourseClick: (courseId: String) -> Unit,
-    onContinueClick: (course: Course, index: Int) -> Unit,
     onResetServer: () -> Unit,
+    content: @Composable (LibraryUiState.Ready) -> Unit,
 ) {
     val state by vm.uiState.collectAsState()
     when (val s = state) {
@@ -93,7 +94,18 @@ fun LibraryScreen(
                 Text("Change server")
             }
         }
-        is LibraryUiState.Ready -> LazyColumn(
+        is LibraryUiState.Ready -> content(s)
+    }
+}
+
+@Composable
+fun HomeScreen(
+    vm: LibraryViewModel,
+    onContinueClick: (course: Course, index: Int) -> Unit,
+    onResetServer: () -> Unit,
+) {
+    LibraryTabScaffold(vm, onResetServer) { s ->
+        LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -111,6 +123,11 @@ fun LibraryScreen(
                         color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
+                Text(
+                    "${s.courses.size} courses · ${s.singles.size} singles",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 TextButton(onClick = onResetServer) {
                     Text("Change server")
                 }
@@ -144,37 +161,118 @@ fun LibraryScreen(
                         }
                     }
                 }
+            } else {
+                item {
+                    Text(
+                        "Nothing in progress yet. Pick a course or a single to begin.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun CoursesScreen(
+    vm: LibraryViewModel,
+    onCourseClick: (courseId: String) -> Unit,
+    onResetServer: () -> Unit,
+) {
+    LibraryTabScaffold(vm, onResetServer) { s ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             item { Text("Courses", style = MaterialTheme.typography.titleMedium) }
             items(s.courses) { course ->
-                Card(onClick = { onCourseClick(course.id) }) {
-                    Column {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().height(96.dp)
-                                .background(rememberCourseBrush(course.id)),
-                            contentAlignment = Alignment.BottomStart,
-                        ) {
+                CourseCard(course) { onCourseClick(course.id) }
+            }
+        }
+    }
+}
+
+@Composable
+fun SinglesScreen(
+    vm: LibraryViewModel,
+    onSingleClick: (single: Single) -> Unit,
+    onResetServer: () -> Unit,
+) {
+    LibraryTabScaffold(vm, onResetServer) { s ->
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            item { Text("Singles", style = MaterialTheme.typography.titleMedium) }
+            if (s.singles.isEmpty()) {
+                item {
+                    Text(
+                        "No singles on this server yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            items(s.singles) { single ->
+                Card(onClick = { onSingleClick(single) }) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(single.title, style = MaterialTheme.typography.titleMedium)
+                            val meta = listOfNotNull(single.authorName, single.categoryTitle)
+                                .joinToString(" · ")
+                            if (meta.isNotEmpty()) {
+                                Text(
+                                    meta,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                             Text(
-                                course.title,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = Color.White,
-                                modifier = Modifier.padding(16.dp),
-                            )
-                        }
-                        Column(Modifier.padding(16.dp)) {
-                            Text(
-                                course.description,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Text(
-                                "${course.units.size} units",
+                                formatMs(single.durationSeconds?.times(1000)),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
+                        Icon(Icons.Filled.PlayArrow, contentDescription = "Play")
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CourseCard(course: Course, onClick: () -> Unit) {
+    Card(onClick = onClick) {
+        Column {
+            Box(
+                modifier = Modifier.fillMaxWidth().height(96.dp)
+                    .background(rememberCourseBrush(course.id)),
+                contentAlignment = Alignment.BottomStart,
+            ) {
+                Text(
+                    course.title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    course.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    "${course.units.size} units",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

@@ -1,6 +1,7 @@
 package de.bananer.zazendroid.ui
 
 import de.bananer.zazendroid.data.catalog.Course
+import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.playback.PlaybackManager
 import de.bananer.zazendroid.data.playback.PlaybackUiState
 import kotlinx.coroutines.Dispatchers
@@ -26,11 +27,17 @@ private class FakePlaybackManager : PlaybackManager {
     override fun play(course: Course, startIndex: Int) {
         calls += "play:$startIndex"
     }
+    override fun playSingle(single: Single) {
+        calls += "playSingle:${single.id}"
+    }
     override fun toggle() {
         calls += "toggle"
     }
     override fun queue(course: Course, startIndex: Int) {
         calls += "queue:$startIndex"
+    }
+    override fun queueSingle(single: Single) {
+        calls += "queueSingle:${single.id}"
     }
     override fun seekTo(positionMs: Long) {
         calls += "seek"

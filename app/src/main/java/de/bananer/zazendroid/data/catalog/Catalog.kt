@@ -4,6 +4,7 @@ package de.bananer.zazendroid.data.catalog
 data class Catalog(
     val appInfo: AppInfo,
     val courses: List<Course>,
+    val singles: List<Single> = emptyList(),
     val loadedFrom: String,
     val fromCache: Boolean,
 )
@@ -35,6 +36,18 @@ data class Unit(
     val orderIndex: Int,
 )
 
+/** Meditation unit outside of any course; never tracked in course progress. */
+data class Single(
+    val id: String,
+    val title: String,
+    val description: String,
+    val authorName: String? = null,
+    val categoryTitle: String? = null,
+    /** Resolved absolute URL (relative inputs joined against the server base URL). */
+    val audioUrl: String,
+    val durationSeconds: Long?,
+)
+
 /** Catalog load failure; [Empty] means nothing survived validation filtering. */
 sealed interface CatalogError {
     data object Empty : CatalogError
@@ -47,7 +60,8 @@ sealed interface CatalogError {
  * surfaced as catalog load error, never silent skip).
  *
  * Validation: drops courses with empty id/title or empty units; drops units with
- * empty id/title/audioUrl. Empty catalog after filtering throws [CatalogError.Empty]
+ * empty id/title/audioUrl; drops singles with empty id/title/audioUrl. Empty
+ * catalog (no courses and no singles) after filtering throws [CatalogError.Empty]
  * wrapped as [CatalogEmptyException].
  */
 fun CatalogDto.toDomain(baseUrl: String): Catalog {
@@ -77,10 +91,25 @@ fun CatalogDto.toDomain(baseUrl: String): Catalog {
             units = units,
         )
     }
-    if (courses.isEmpty()) throw CatalogEmptyException()
+    val singles = singles.mapNotNull { single ->
+        if (single.id.isBlank() || single.title.isBlank() || single.audioUrl.isBlank()) {
+            return@mapNotNull null
+        }
+        Single(
+            id = single.id,
+            title = single.title,
+            description = single.description,
+            authorName = single.authorName,
+            categoryTitle = single.categoryTitle,
+            audioUrl = resolveAudioUrl(baseUrl, single.audioUrl),
+            durationSeconds = single.durationSeconds,
+        )
+    }
+    if (courses.isEmpty() && singles.isEmpty()) throw CatalogEmptyException()
     return Catalog(
         appInfo = AppInfo(appInfo.appName, appInfo.description, appInfo.version),
         courses = courses,
+        singles = singles,
         loadedFrom = baseUrl,
         fromCache = false,
     )

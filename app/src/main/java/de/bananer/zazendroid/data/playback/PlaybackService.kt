@@ -36,7 +36,7 @@ class PlaybackService : Service() {
         val manager = (application as ZazenApp).container.playbackManager
         scope.launch {
             manager.state
-                .map { Triple(it.unit?.id, it.unit?.title, it.isPlaying) }
+                .map { Triple(it.unit?.id ?: it.single?.id, it.unit?.title ?: it.single?.title, it.isPlaying) }
                 .distinctUntilChanged()
                 .collect { notifyCurrent() }
         }
@@ -74,8 +74,8 @@ class PlaybackService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(state.unit?.title ?: "ZazenDroid")
-            .setContentText(state.courseTitle.ifEmpty { "Meditation" })
+            .setContentTitle(state.unit?.title ?: state.single?.title ?: "ZazenDroid")
+            .setContentText(state.single?.let { it.authorName ?: it.categoryTitle } ?: state.courseTitle.ifEmpty { "Meditation" })
             .setSmallIcon(android.R.drawable.ic_media_play)
             .setContentIntent(content)
             .setOngoing(state.isPlaying)

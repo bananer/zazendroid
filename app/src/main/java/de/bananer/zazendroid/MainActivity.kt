@@ -7,9 +7,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -30,14 +36,24 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import de.bananer.zazendroid.ui.CourseDetailScreen
 import de.bananer.zazendroid.ui.CourseDetailViewModel
-import de.bananer.zazendroid.ui.LibraryScreen
+import de.bananer.zazendroid.ui.CoursesScreen
+import de.bananer.zazendroid.ui.HomeScreen
 import de.bananer.zazendroid.ui.LibraryViewModel
 import de.bananer.zazendroid.ui.PlayerScreen
 import de.bananer.zazendroid.ui.PlayerViewModel
 import de.bananer.zazendroid.ui.ServerSetupScreen
 import de.bananer.zazendroid.ui.ServerSetupViewModel
 import de.bananer.zazendroid.ui.SetupUiState
+import de.bananer.zazendroid.ui.SinglesScreen
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
+
+private data class Tab(val route: String, val label: String, val icon: ImageVector)
+
+private val TABS = listOf(
+    Tab("home", "Home", Icons.Filled.Home),
+    Tab("courses", "Courses", Icons.Filled.List),
+    Tab("singles", "Singles", Icons.Filled.PlayArrow),
+)
 
 class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
@@ -68,11 +84,24 @@ class MainActivity : ComponentActivity() {
                             val nav = rememberNavController()
                             val entry by nav.currentBackStackEntryAsState()
                             val route = entry?.destination?.route
+                            val onTab = route in TABS.map { it.route }
+                            // One library VM shared by all three tabs: same
+                            // catalog flow, one subscription.
+                            val libraryVm: LibraryViewModel = viewModel(
+                                factory = vmFactory {
+                                    LibraryViewModel(
+                                        container.catalogRepository,
+                                        container.progressRepository,
+                                        container.serverUrlStore.hasStoredUrlFlow(),
+                                        container.serverUrlStore,
+                                    )
+                                },
+                            )
                             Scaffold(
                                 topBar = {
-                                    // Root (library) has no back stack; every child
-                                    // screen gets the arrow.
-                                    if (route != null && route != "library") {
+                                    // Tabs have no back stack; detail screens
+                                    // get the arrow.
+                                    if (!onTab && route != null) {
                                         TopAppBar(
                                             title = {
                                                 Text(
@@ -91,27 +120,55 @@ class MainActivity : ComponentActivity() {
                                         )
                                     }
                                 },
-                            ) { inner ->
-                                NavHost(nav, startDestination = "library", modifier = Modifier.padding(inner)) {
-                                    composable("library") {
-                                        val vm: LibraryViewModel = viewModel(
-                                            factory = vmFactory {
-                                                LibraryViewModel(
-                                                    container.catalogRepository,
-                                                    container.progressRepository,
-                                                    container.serverUrlStore.hasStoredUrlFlow(),
-                                                    container.serverUrlStore,
+                                bottomBar = {
+                                    if (onTab) {
+                                        NavigationBar {
+                                            TABS.forEach { tab ->
+                                                NavigationBarItem(
+                                                    selected = route == tab.route,
+                                                    onClick = {
+                                                        nav.navigate(tab.route) {
+                                                            popUpTo(nav.graph.startDestinationId) {
+                                                                saveState = true
+                                                            }
+                                                            launchSingleTop = true
+                                                            restoreState = true
+                                                        }
+                                                    },
+                                                    icon = { Icon(tab.icon, tab.label) },
+                                                    label = { Text(tab.label) },
                                                 )
-                                            },
-                                        )
-                                        LibraryScreen(
-                                            vm,
-                                            onCourseClick = { nav.navigate("course/$it") },
+                                            }
+                                        }
+                                    }
+                                },
+                            ) { inner ->
+                                NavHost(nav, startDestination = "home", modifier = Modifier.padding(inner)) {
+                                    composable("home") {
+                                        HomeScreen(
+                                            libraryVm,
                                             onContinueClick = { course, index ->
                                                 container.playbackManager.play(course, index)
                                                 nav.navigate("player")
                                             },
-                                            onResetServer = { vm.resetServer() },
+                                            onResetServer = { libraryVm.resetServer() },
+                                        )
+                                    }
+                                    composable("courses") {
+                                        CoursesScreen(
+                                            libraryVm,
+                                            onCourseClick = { nav.navigate("course/$it") },
+                                            onResetServer = { libraryVm.resetServer() },
+                                        )
+                                    }
+                                    composable("singles") {
+                                        SinglesScreen(
+                                            libraryVm,
+                                            onSingleClick = { single ->
+                                                container.playbackManager.queueSingle(single)
+                                                nav.navigate("player")
+                                            },
+                                            onResetServer = { libraryVm.resetServer() },
                                         )
                                     }
                                     composable(
