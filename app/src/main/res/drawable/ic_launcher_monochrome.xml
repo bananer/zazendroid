@@ -1,0 +1,13 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Same blob geometry, flat white for themed-icon masking. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M39,37C30.7,37 24.2,44.4 24.2,54.5C24.2,64.6 30.7,72 39,71.1C42,66.5 43.5,60.9 47.5,56.3C51.5,51.8 49,43.5 39,37Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M59,43.5C64.5,47.1 63.6,51.8 59.9,55.4C56.2,59 57.1,65.5 61.7,68.3C69.1,67.4 78,60.9 78,52.7C78,45.3 66.3,39.8 59,43.5Z" />
+</vector>
