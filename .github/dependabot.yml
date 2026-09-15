@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    # Covers gradle/libs.versions.toml, *.gradle.kts, and gradle-wrapper.properties
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      androidx:
+        patterns:
+          - "androidx*"
+      kotlin:
+        patterns:
+          - "org.jetbrains.kotlin*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
