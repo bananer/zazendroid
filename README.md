@@ -46,8 +46,16 @@ the data-server URL, then browse.
 
 ### CI
 
-`.github/workflows/debug.yml` builds `assembleDebug` and runs `./gradlew test`
-on pushes to `main`, pull requests, and manual dispatch. The debug APK is
-uploaded as the `app-debug` artifact. No keystore or secrets needed — debug
-builds use the SDK-provided debug key. No emulator needed: instrumented tests
-(`connectedDebugAndroidTest`) do not run in CI.
+`.github/workflows/build.yml` has two jobs:
+
+- `debug` (every push, PR, manual run): `assembleDebug` + `./gradlew test`,
+  uploaded as the `app-debug` artifact. Secret-free.
+- `release` (pushes to `main` and `v*` tags, never PRs): signed
+  `assembleRelease` via the `production` environment keystore, uploaded as
+  `app-release`. The `zazendroid-<ref>.apk` is published as a GitHub Release
+  on `v*` tags only — the artifact Obtainium tracks.
+
+Release setup: create a `production` environment (deploy from `main` + tags)
+holding `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`;
+bump `versionCode`/`versionName` per release and tag `v<versionName>`.
+Instrumented tests (`connectedDebugAndroidTest`) do not run in CI.
