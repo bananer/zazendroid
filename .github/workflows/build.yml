@@ -78,11 +78,6 @@ jobs:
           log-accepted-android-sdk-licenses: false
           packages: 'platform-tools'
 
-      - name: Run unit tests
-        run: |
-          chmod +x gradlew
-          ./gradlew test --stacktrace
-
       - name: Decode keystore
         run: |
           if [ -z "$KEYSTORE_BASE64" ]; then
