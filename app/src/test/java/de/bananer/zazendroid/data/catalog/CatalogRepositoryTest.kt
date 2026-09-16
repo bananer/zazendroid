@@ -1,8 +1,6 @@
 package de.bananer.zazendroid.data.catalog
 
-import com.sun.net.httpserver.HttpServer
 import java.io.File
-import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -11,6 +9,10 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -22,15 +24,14 @@ private const val BODY = """
    "units":[{"id":"u1","title":"Breath","audioUrl":"/audio/b.mp3"}]}]}
 """
 
-private fun serve(body: String, code: Int = 200): Pair<HttpServer, String> {
-    val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-    server.createContext("/catalog.json") { exchange ->
-        val bytes = body.toByteArray()
-        exchange.sendResponseHeaders(code, bytes.size.toLong())
-        exchange.responseBody.use { it.write(bytes) }
+private fun serve(body: String, code: Int = 200): Pair<MockWebServer, String> {
+    val server = MockWebServer()
+    server.dispatcher = object : Dispatcher() {
+        override fun dispatch(request: RecordedRequest): MockResponse =
+            MockResponse().setResponseCode(code).setBody(body)
     }
     server.start()
-    return server to "http://127.0.0.1:${server.address.port}"
+    return server to server.url("/").toString().removeSuffix("/")
 }
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -60,7 +61,7 @@ class CatalogRepositoryTest {
             assertEquals("$base/audio/b.mp3", state.catalog.courses[0].units[0].audioUrl)
             assertEquals(1, dir.listFiles()?.size)
         } finally {
-            server.stop(0)
+            server.shutdown()
         }
     }
 
@@ -75,7 +76,7 @@ class CatalogRepositoryTest {
             assertTrue(state is CatalogState.Error)
             assertEquals(CatalogErrorKind.INVALID_CONTENT, (state as CatalogState.Error).kind)
         } finally {
-            server.stop(0)
+            server.shutdown()
         }
     }
 
@@ -86,7 +87,7 @@ class CatalogRepositoryTest {
         val r = repo(base, dir, TestScope(UnconfinedTestDispatcher()))
         r.loadNow(base)
         assertTrue(r.catalogFlow.value is CatalogState.Ready)
-        server.stop(0)
+        server.shutdown()
 
         r.loadNow(base)
         val state = r.catalogFlow.value

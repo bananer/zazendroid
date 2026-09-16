@@ -76,6 +76,7 @@ dependencies {
     implementation(libs.navigation.compose)
     ksp(libs.room.compiler)
     testImplementation(libs.junit)
+    testImplementation(libs.mockwebserver)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.room.testing)
     androidTestImplementation(platform(libs.androidx.compose.bom))

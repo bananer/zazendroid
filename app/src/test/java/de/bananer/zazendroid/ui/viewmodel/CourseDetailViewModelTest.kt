@@ -1,14 +1,10 @@
-package de.bananer.zazendroid.ui
+package de.bananer.zazendroid.ui.viewmodel
 
-import com.sun.net.httpserver.HttpServer
 import de.bananer.zazendroid.data.catalog.CatalogRepository
 import de.bananer.zazendroid.data.local.CourseProgressEntity
 import de.bananer.zazendroid.data.local.ProgressDao
 import de.bananer.zazendroid.data.progress.RoomProgressRepository
-import de.bananer.zazendroid.ui.viewmodel.CourseDetailViewModel
-import de.bananer.zazendroid.ui.viewmodel.DetailUiState
 import java.io.File
-import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +21,10 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.test.resetMain
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
+import okhttp3.mockwebserver.Dispatcher
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.RecordedRequest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -68,15 +68,14 @@ class CourseDetailViewModelTest {
 
     @Test
     fun `rows reflect completed progress`() = runTest {
-        val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
-        server.createContext("/catalog.json") { exchange ->
-            val bytes = BODY.toByteArray()
-            exchange.sendResponseHeaders(200, bytes.size.toLong())
-            exchange.responseBody.use { it.write(bytes) }
+        val server = MockWebServer()
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse =
+                MockResponse().setBody(BODY)
         }
         server.start()
         try {
-            val base = "http://127.0.0.1:${server.address.port}"
+            val base = server.url("/").toString().removeSuffix("/")
             val repo = CatalogRepository(
                 baseUrlFlow = MutableStateFlow(base),
                 okHttpClient = OkHttpClient.Builder().callTimeout(15, TimeUnit.SECONDS).build(),
@@ -93,7 +92,7 @@ class CourseDetailViewModelTest {
             assertEquals("Basics", state.course.title)
             assertEquals(listOf(true, false, false), state.rows.map { it.completed })
         } finally {
-            server.stop(0)
+            server.shutdown()
         }
     }
 
