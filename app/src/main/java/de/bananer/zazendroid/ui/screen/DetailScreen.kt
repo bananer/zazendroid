@@ -1,4 +1,4 @@
-package de.bananer.zazendroid.ui
+package de.bananer.zazendroid.ui.screen
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -35,6 +35,10 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import de.bananer.zazendroid.R
 import de.bananer.zazendroid.data.catalog.Course
+import de.bananer.zazendroid.ui.viewmodel.CourseDetailViewModel
+import de.bananer.zazendroid.ui.viewmodel.DetailUiState
+import de.bananer.zazendroid.ui.formatMs
+
 @Composable
 fun CourseDetailScreen(
     vm: CourseDetailViewModel,
@@ -111,15 +115,4 @@ fun CourseDetailScreen(
         }
 }
 }
-fun formatMs(ms: Long?): String {
-    if (ms == null || ms <= 0) return "–"
-    val total = ms / 1000
-    return "%d:%02d".format(total / 60, total % 60)
-}
-/** Position clock: 0 is a valid position, only negatives are unknown. */
-fun formatPosition(ms: Long): String {
-    if (ms < 0) return "–"
-    return "%d:%02d".format(ms / 1000 / 60, ms / 1000 % 60)
-}
-
 

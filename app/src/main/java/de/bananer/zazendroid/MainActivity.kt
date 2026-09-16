@@ -39,17 +39,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import de.bananer.zazendroid.data.favorites.FavoriteEntry
-import de.bananer.zazendroid.ui.CourseDetailScreen
-import de.bananer.zazendroid.ui.CourseDetailViewModel
-import de.bananer.zazendroid.ui.CoursesScreen
-import de.bananer.zazendroid.ui.HomeScreen
-import de.bananer.zazendroid.ui.LibraryViewModel
-import de.bananer.zazendroid.ui.PlayerScreen
-import de.bananer.zazendroid.ui.PlayerViewModel
-import de.bananer.zazendroid.ui.ServerSetupScreen
-import de.bananer.zazendroid.ui.ServerSetupViewModel
-import de.bananer.zazendroid.ui.SetupUiState
-import de.bananer.zazendroid.ui.SinglesScreen
+import de.bananer.zazendroid.ui.screen.CourseDetailScreen
+import de.bananer.zazendroid.ui.viewmodel.CourseDetailViewModel
+import de.bananer.zazendroid.ui.screen.CoursesScreen
+import de.bananer.zazendroid.ui.screen.HomeScreen
+import de.bananer.zazendroid.ui.viewmodel.LibraryViewModel
+import de.bananer.zazendroid.ui.screen.PlayerScreen
+import de.bananer.zazendroid.ui.viewmodel.PlayerViewModel
+import de.bananer.zazendroid.ui.screen.ServerSetupScreen
+import de.bananer.zazendroid.ui.viewmodel.ServerSetupViewModel
+import de.bananer.zazendroid.ui.viewmodel.SetupUiState
+import de.bananer.zazendroid.ui.screen.SinglesScreen
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
 
 private data class Tab(val route: String, val labelRes: Int, val icon: ImageVector)

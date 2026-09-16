@@ -1,7 +1,8 @@
-package de.bananer.zazendroid.ui
+package de.bananer.zazendroid.ui.viewmodel
 
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
+import de.bananer.zazendroid.data.catalog.Unit
 import de.bananer.zazendroid.data.favorites.Favorite
 import de.bananer.zazendroid.data.favorites.FavoritesRepository
 import de.bananer.zazendroid.data.playback.PlaybackManager
@@ -122,7 +123,7 @@ class PlayerViewModelTest {
             title = "Basics",
             description = "d",
             units = listOf(
-                de.bananer.zazendroid.data.catalog.Unit(
+                Unit(
                     id = "u1",
                     courseId = "c1",
                     title = "One",

@@ -1,4 +1,4 @@
-package de.bananer.zazendroid.ui
+package de.bananer.zazendroid.ui.screen
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -46,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import de.bananer.zazendroid.R
 import de.bananer.zazendroid.data.playback.PlaybackError
+import de.bananer.zazendroid.ui.viewmodel.PlayerViewModel
+import de.bananer.zazendroid.ui.formatMs
+import de.bananer.zazendroid.ui.formatPosition
 import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 @Composable
 fun PlayerScreen(vm: PlayerViewModel) {

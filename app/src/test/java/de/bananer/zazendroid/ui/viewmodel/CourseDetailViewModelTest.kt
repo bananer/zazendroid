@@ -5,6 +5,8 @@ import de.bananer.zazendroid.data.catalog.CatalogRepository
 import de.bananer.zazendroid.data.local.CourseProgressEntity
 import de.bananer.zazendroid.data.local.ProgressDao
 import de.bananer.zazendroid.data.progress.RoomProgressRepository
+import de.bananer.zazendroid.ui.viewmodel.CourseDetailViewModel
+import de.bananer.zazendroid.ui.viewmodel.DetailUiState
 import java.io.File
 import java.net.InetSocketAddress
 import java.nio.file.Files

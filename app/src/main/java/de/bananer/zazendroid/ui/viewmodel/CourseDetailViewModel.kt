@@ -1,4 +1,4 @@
-package de.bananer.zazendroid.ui
+package de.bananer.zazendroid.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
