@@ -87,7 +87,8 @@ class MainActivity : ComponentActivity() {
                             // After a reset the VM still holds its old state
                             // (Saved/InvalidUrl); start fresh with the default
                             // prefill. Typing states survive rotation untouched.
-                            if (vm.uiState.value is SetupUiState.Saved) {
+                            val setupState by vm.uiState.collectAsState()
+                            if (setupState is SetupUiState.Saved) {
                                 LaunchedEffect(Unit) { vm.backToSetup() }
                             }
                             Scaffold { inner ->
