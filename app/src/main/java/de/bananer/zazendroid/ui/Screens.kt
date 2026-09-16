@@ -44,7 +44,7 @@ import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 
 /** First-launch server setup + library. */
 @Composable
-fun ServerSetupScreen(vm: ServerSetupViewModel) {
+fun ServerSetupScreen(vm: ServerSetupViewModel, modifier: Modifier = Modifier) {
     val state by vm.uiState.collectAsState()
     var text by remember(state) {
         mutableStateOf(
@@ -55,7 +55,7 @@ fun ServerSetupScreen(vm: ServerSetupViewModel) {
     }
     val error = state as? SetupUiState.InvalidUrl
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(stringResource(R.string.setup_title), style = MaterialTheme.typography.headlineSmall)

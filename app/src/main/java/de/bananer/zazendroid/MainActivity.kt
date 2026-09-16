@@ -90,7 +90,9 @@ class MainActivity : ComponentActivity() {
                             if (vm.uiState.value is SetupUiState.Saved) {
                                 LaunchedEffect(Unit) { vm.backToSetup() }
                             }
-                            ServerSetupScreen(vm)
+                            Scaffold { inner ->
+                                ServerSetupScreen(vm, modifier = Modifier.padding(inner))
+                            }
                         }
                         true -> {
                             val nav = rememberNavController()
