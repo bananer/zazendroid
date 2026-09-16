@@ -2,7 +2,6 @@ package de.bananer.zazendroid.ui.screen
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -34,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -46,10 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import de.bananer.zazendroid.R
 import de.bananer.zazendroid.data.playback.PlaybackError
-import de.bananer.zazendroid.ui.viewmodel.PlayerViewModel
 import de.bananer.zazendroid.ui.formatMs
 import de.bananer.zazendroid.ui.formatPosition
 import de.bananer.zazendroid.ui.theme.rememberCourseBrush
+import de.bananer.zazendroid.ui.viewmodel.PlayerViewModel
+
 @Composable
 fun PlayerScreen(vm: PlayerViewModel) {
     val state by vm.uiState.collectAsState()
@@ -71,7 +72,7 @@ fun PlayerScreen(vm: PlayerViewModel) {
     }
 
     var dragging by remember { mutableStateOf(false) }
-    var dragPos by remember { mutableStateOf(0f) }
+    var dragPos by remember { mutableFloatStateOf(0f) }
     LaunchedEffect(state.positionMs, dragging) {
         if (!dragging) dragPos = state.positionMs.toFloat()
     }

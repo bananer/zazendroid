@@ -7,11 +7,13 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
+import de.bananer.zazendroid.MainActivity
+import de.bananer.zazendroid.R
+import de.bananer.zazendroid.ZazenApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,9 +21,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import de.bananer.zazendroid.MainActivity
-import de.bananer.zazendroid.R
-import de.bananer.zazendroid.ZazenApp
 
 /**
  * Plain foreground service: keeps audio alive in background behind an ongoing

@@ -10,7 +10,6 @@ import de.bananer.zazendroid.data.local.MIGRATION_1_2
 import de.bananer.zazendroid.data.local.ZazenDb
 import de.bananer.zazendroid.data.playback.ExoPlaybackManager
 import de.bananer.zazendroid.data.playback.PlaybackManager
-import de.bananer.zazendroid.data.progress.ContinueQueue
 import de.bananer.zazendroid.data.progress.ProgressRepository
 import de.bananer.zazendroid.data.progress.RoomProgressRepository
 import de.bananer.zazendroid.data.settings.ServerUrlStore
@@ -33,7 +32,7 @@ class ZazenApp : Application() {
 }
 
 /**
- * Hand-written manual DI container. Future repositories (tracking)
+ * Handwritten manual DI container. Future repositories (tracking)
  * are added as lazily-built fields here reusing the [ZazenDb] singleton —
  * no new database, no new DI framework.
  */
@@ -77,7 +76,6 @@ class AppContainer(context: Context) {
         )
     }
 
-    val continueQueue: ContinueQueue get() = ContinueQueue
     val playbackManager: PlaybackManager by lazy {
         ExoPlaybackManager(appContext, progressRepository, appScope)
     }

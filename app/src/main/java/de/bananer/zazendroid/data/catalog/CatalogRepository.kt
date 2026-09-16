@@ -153,5 +153,5 @@ class CatalogRepository(
     }
 }
 
-class CatalogHttpException(val code: Int) : IllegalStateException("HTTP $code")
+class CatalogHttpException(code: Int) : IllegalStateException("HTTP $code")
 class CatalogParseException(cause: Throwable? = null) : IllegalStateException("Parse error", cause)

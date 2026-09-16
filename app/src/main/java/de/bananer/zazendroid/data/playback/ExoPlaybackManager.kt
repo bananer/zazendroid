@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
@@ -23,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * ExoPlayer-backed [PlaybackManager]. Owns one app-scoped player (surfaces to
@@ -203,7 +203,7 @@ class ExoPlaybackManager(
         if (!player.isPlaying) return
         pollJob = scope.launch {
             while (isActive) {
-                delay(500)
+                delay(500.milliseconds)
                 publish()
                 if (!player.isPlaying) break
             }

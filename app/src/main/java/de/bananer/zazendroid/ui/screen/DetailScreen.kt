@@ -2,7 +2,6 @@ package de.bananer.zazendroid.ui.screen
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -35,9 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import de.bananer.zazendroid.R
 import de.bananer.zazendroid.data.catalog.Course
+import de.bananer.zazendroid.ui.formatMs
 import de.bananer.zazendroid.ui.viewmodel.CourseDetailViewModel
 import de.bananer.zazendroid.ui.viewmodel.DetailUiState
-import de.bananer.zazendroid.ui.formatMs
 
 @Composable
 fun CourseDetailScreen(

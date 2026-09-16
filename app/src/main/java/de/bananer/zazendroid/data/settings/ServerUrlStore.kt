@@ -32,7 +32,7 @@ class ServerUrlStore(
             if (trimmed.isEmpty()) throw EmptyServerUrlException()
             val withoutTrailing = trimmed.trimEnd('/')
             if (withoutTrailing.isEmpty()) throw EmptyServerUrlException()
-            val parsed = (withoutTrailing + "/").toHttpUrlOrNull()
+            val parsed = ("$withoutTrailing/").toHttpUrlOrNull()
                 ?: throw InvalidServerUrlException(url)
             if (parsed.scheme != "https" && parsed.scheme != "http") {
                 throw InvalidServerUrlException(url)
@@ -73,4 +73,4 @@ class ServerUrlStore(
 class EmptyServerUrlException : IllegalArgumentException("Server URL must not be empty")
 
 /** Unparseable or non-http(s) URL: UI resolves to `R.string.setup_error_invalid`. */
-class InvalidServerUrlException(val input: String) : IllegalArgumentException("Invalid server URL: $input")
+class InvalidServerUrlException(input: String) : IllegalArgumentException("Invalid server URL: $input")
