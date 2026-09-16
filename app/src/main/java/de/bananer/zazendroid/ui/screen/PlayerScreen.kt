@@ -56,19 +56,17 @@ fun PlayerScreen(vm: PlayerViewModel) {
     val isFavorite by vm.isFavorite.collectAsState()
     val hasTrack = state.unit != null || state.single != null
 
-    if (Build.VERSION.SDK_INT >= 33) {
-        val context = LocalContext.current
-        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) vm.ensureForegroundService()
-        }
-        LaunchedEffect(Unit) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            } else {
-                vm.ensureForegroundService()
-            }
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.ensureForegroundService()
+    }
+    LaunchedEffect(Unit) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            vm.ensureForegroundService()
         }
     }
 

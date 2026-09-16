@@ -47,15 +47,13 @@ fun CourseDetailScreen(
 ) {
     // Settle notification permission before any tap can start playback: the
     // background service cannot foreground without it.
-    if (Build.VERSION.SDK_INT >= 33) {
-        val context = LocalContext.current
-        val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-        LaunchedEffect(Unit) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-            ) {
-                launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+    val context = LocalContext.current
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
     val state by vm.uiState.collectAsState()

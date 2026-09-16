@@ -98,15 +98,13 @@ class PlaybackService : Service() {
     }
 
     private fun ensureChannel() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            getSystemService(NotificationManager::class.java).createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    getString(R.string.notif_channel_playback),
-                    NotificationManager.IMPORTANCE_LOW,
-                ),
-            )
-        }
+        getSystemService(NotificationManager::class.java).createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_ID,
+                getString(R.string.notif_channel_playback),
+                NotificationManager.IMPORTANCE_LOW,
+            ),
+        )
     }
 
     /**
