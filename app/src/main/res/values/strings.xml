@@ -20,6 +20,8 @@
     <string name="heading_favorites">Favorites</string>
     <string name="heading_courses">Courses</string>
     <string name="heading_singles">Singles</string>
+    <string name="filter_all">All</string>
+    <string name="filter_empty">Nothing in this category yet.</string>
     <string name="search_hint">Search titles and descriptions</string>
     <string name="search_prompt">Type to search courses, units and singles.</string>
     <string name="search_empty">No results. Try a different term.</string>

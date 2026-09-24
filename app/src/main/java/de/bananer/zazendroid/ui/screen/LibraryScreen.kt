@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +18,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,6 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import de.bananer.zazendroid.R
 import de.bananer.zazendroid.data.catalog.CatalogErrorKind
+import de.bananer.zazendroid.data.catalog.Category
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.favorites.FavoriteEntry
@@ -183,6 +189,34 @@ fun HomeScreen(
 }
 
 @Composable
+private fun CategoryChips(
+    categories: List<Category>,
+    usedIds: Set<String>,
+    selectedId: String?,
+    onSelect: (String?) -> Unit,
+) {
+    val visible = categories.filter { it.id in usedIds }
+    if (visible.size < 2) return
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        FilterChip(
+            selected = selectedId == null,
+            onClick = { onSelect(null) },
+            label = { Text(stringResource(R.string.filter_all)) },
+        )
+        visible.forEach { cat ->
+            FilterChip(
+                selected = selectedId == cat.id,
+                onClick = { onSelect(cat.id) },
+                label = { Text(cat.title) },
+            )
+        }
+    }
+}
+
+@Composable
 fun CoursesScreen(
     vm: LibraryViewModel,
     onCourseClick: (courseId: String) -> Unit,
@@ -190,18 +224,37 @@ fun CoursesScreen(
     onResetServer: () -> Unit,
 ) {
     LibraryTabScaffold(vm, onResetServer) { s ->
+        var selectedId by rememberSaveable(s.loadedFrom) { mutableStateOf<String?>(null) }
+        val shown = if (selectedId == null) s.courses else s.courses.filter { it.categoryId == selectedId }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { Text(stringResource(R.string.heading_courses), style = MaterialTheme.typography.titleMedium) }
-            items(s.courses) { course ->
+            item {
+                CategoryChips(
+                    categories = s.categories,
+                    usedIds = s.courses.map { it.categoryId }.toSet(),
+                    selectedId = selectedId,
+                    onSelect = { selectedId = it },
+                )
+            }
+            if (shown.isEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.filter_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            items(shown, key = { it.id }) { course ->
                 if (course.units.isNotEmpty()) {
                     LaunchedEffect(course.id) {
                         onPreload(course, 0)
                     }
                 }
-                CourseCard(course) { onCourseClick(course.id) }
+                CourseCard(course, categoryTitle = s.categoryTitle(course.categoryId)) { onCourseClick(course.id) }
             }
         }
     }
@@ -215,11 +268,21 @@ fun SinglesScreen(
     onResetServer: () -> Unit,
 ) {
     LibraryTabScaffold(vm, onResetServer) { s ->
+        var selectedId by rememberSaveable(s.loadedFrom) { mutableStateOf<String?>(null) }
+        val shown = if (selectedId == null) s.singles else s.singles.filter { it.categoryId == selectedId }
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item { Text(stringResource(R.string.heading_singles), style = MaterialTheme.typography.titleMedium) }
+            item {
+                CategoryChips(
+                    categories = s.categories,
+                    usedIds = s.singles.map { it.categoryId }.toSet(),
+                    selectedId = selectedId,
+                    onSelect = { selectedId = it },
+                )
+            }
             if (s.singles.isEmpty()) {
                 item {
                     Text(
@@ -228,8 +291,16 @@ fun SinglesScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+            } else if (shown.isEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.filter_empty),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            items(s.singles) { single ->
+            items(shown, key = { it.id }) { single ->
                 LaunchedEffect(single.id) {
                     onPreloadSingle(single)
                 }
@@ -265,7 +336,7 @@ fun SinglesScreen(
 }
 
 @Composable
-private fun CourseCard(course: Course, onClick: () -> Unit) {
+private fun CourseCard(course: Course, categoryTitle: String?, onClick: () -> Unit) {
     Card(onClick = onClick) {
         Column {
             Box(
@@ -286,6 +357,15 @@ private fun CourseCard(course: Course, onClick: () -> Unit) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val meta = listOfNotNull(course.authorName, categoryTitle)
+                    .joinToString(" · ")
+                if (meta.isNotEmpty()) {
+                    Text(
+                        meta,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
                     pluralStringResource(R.plurals.units_count, course.units.size, course.units.size),
                     style = MaterialTheme.typography.labelSmall,
