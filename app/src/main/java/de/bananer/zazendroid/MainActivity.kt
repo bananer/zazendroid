@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -49,6 +50,7 @@ import de.bananer.zazendroid.ui.viewmodel.PlayerViewModel
 import de.bananer.zazendroid.ui.screen.ServerSetupScreen
 import de.bananer.zazendroid.ui.viewmodel.ServerSetupViewModel
 import de.bananer.zazendroid.ui.viewmodel.SetupUiState
+import de.bananer.zazendroid.ui.screen.SearchScreen
 import de.bananer.zazendroid.ui.screen.SinglesScreen
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
 
@@ -58,6 +60,7 @@ private val TABS = listOf(
     Tab("home", R.string.tab_home, Icons.Filled.Home),
     Tab("courses", R.string.tab_courses, Icons.Filled.List),
     Tab("singles", R.string.tab_singles, Icons.Filled.PlayArrow),
+    Tab("search", R.string.tab_search, Icons.Filled.Search),
 )
 
 class MainActivity : ComponentActivity() {
@@ -210,6 +213,17 @@ class MainActivity : ComponentActivity() {
                                             },
                                             onPreloadSingle = { single ->
                                                 container.playbackManager.preloadSingle(single)
+                                            },
+                                            onResetServer = { libraryVm.resetServer() },
+                                        )
+                                    }
+                                    composable("search") {
+                                        SearchScreen(
+                                            libraryVm,
+                                            onCourseClick = { nav.navigate("course/$it") },
+                                            onSingleClick = { single ->
+                                                container.playbackManager.queueSingle(single)
+                                                nav.navigate("player")
                                             },
                                             onResetServer = { libraryVm.resetServer() },
                                         )

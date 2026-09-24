@@ -43,7 +43,7 @@ import de.bananer.zazendroid.ui.theme.rememberCourseBrush
 
 /** Non-Ready library states render identically on every tab. */
 @Composable
-private fun LibraryTabScaffold(
+fun LibraryTabScaffold(
     vm: LibraryViewModel,
     onResetServer: () -> Unit,
     content: @Composable (LibraryUiState.Ready) -> Unit,

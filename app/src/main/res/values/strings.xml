@@ -20,6 +20,12 @@
     <string name="heading_favorites">Favorites</string>
     <string name="heading_courses">Courses</string>
     <string name="heading_singles">Singles</string>
+    <string name="search_hint">Search titles and descriptions</string>
+    <string name="search_prompt">Type to search courses, units and singles.</string>
+    <string name="search_empty">No results. Try a different term.</string>
+    <string name="search_type_course">Course</string>
+    <string name="search_type_unit">Unit · %1$s</string>
+    <string name="search_type_single">Single</string>
     <string name="unit_position">Unit %1$d of %2$d</string>
     <string name="home_empty">Nothing in progress yet. Pick a course or a single to begin.</string>
     <string name="singles_empty">No singles on this server yet.</string>
@@ -37,6 +43,7 @@
     <string name="tab_home">Home</string>
     <string name="tab_courses">Courses</string>
     <string name="tab_singles">Singles</string>
+    <string name="tab_search">Search</string>
     <string name="nav_course">Course</string>
     <string name="nav_now_playing">Now playing</string>
 
