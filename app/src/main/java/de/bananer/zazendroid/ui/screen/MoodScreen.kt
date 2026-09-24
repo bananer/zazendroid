@@ -10,11 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
@@ -121,7 +120,7 @@ fun MoodScreen(vm: MoodViewModel, onDone: () -> Unit) {
     val saving by vm.saving.collectAsState()
     val history by vm.history.collectAsState()
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -166,70 +165,79 @@ fun MoodScreen(vm: MoodViewModel, onDone: () -> Unit) {
                     ),
                     style = MaterialTheme.typography.titleLarge,
                 )
-                MoodHistoryGraph(history = history)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IconButton(onClick = onDone) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.cd_back))
-                    }
-                    MoodLegend()
+                MoodHistoryGraphs(history = history)
+                Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.action_finish))
                 }
             }
         }
     }
 }
 
+/** 14-day history as three single-metric bar graphs, gaps for missing days. */
 @Composable
-private fun MoodLegend() {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(stringResource(R.string.mood_legend_sleep), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-        Text(stringResource(R.string.mood_legend_stress), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-        Text(stringResource(R.string.mood_legend_mood), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.tertiary)
-    }
-}
-
-/** 14-day grouped bar graph: 3 bars/day (sleep/stress/mood), gaps for missing days. */
-@Composable
-private fun MoodHistoryGraph(history: List<MoodCheckin>) {
+private fun MoodHistoryGraphs(history: List<MoodCheckin>) {
     val byDay = remember(history) { history.associateBy { it.dateEpochDay } }
     val today = remember { LocalDate.now().toEpochDay() }
     val days = remember(today) { (0..13).map { today - 13 + it } }
-    val sleepColor = MaterialTheme.colorScheme.primary
-    val stressColor = MaterialTheme.colorScheme.error
-    val moodColor = MaterialTheme.colorScheme.tertiary
-    val grid = MaterialTheme.colorScheme.surfaceVariant
     val dayFmt = remember { DateTimeFormatter.ofPattern("dd") }
-    Column(Modifier.fillMaxWidth()) {
-        Canvas(Modifier.fillMaxWidth().height(220.dp).padding(vertical = 8.dp)) {
-            val barW = size.width / 14f / 4f
-            val maxH = size.height - 40f
-            // Baseline.
-            drawLine(grid, Offset(0f, size.height - 30f), Offset(size.width, size.height - 30f), 2f)
-            days.forEachIndexed { i, day ->
-                val x0 = i * size.width / 14f
-                val e = byDay[day]
-                if (e != null) {
-                    val bars = listOf(e.sleep to sleepColor, e.stress to stressColor, e.mood to moodColor)
-                    bars.forEachIndexed { b, (v, c) ->
-                        val h = (v / 100f * maxH).coerceAtLeast(2f)
-                        drawRect(
-                            color = c,
-                            topLeft = Offset(x0 + b * barW, size.height - 30f - h),
-                            size = androidx.compose.ui.geometry.Size(barW * 0.8f, h),
-                        )
-                    }
-                }
-            }
-        }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        MoodMetricGraph(
+            title = stringResource(R.string.mood_legend_sleep),
+            color = MaterialTheme.colorScheme.primary,
+            days = days,
+            valueOf = { byDay[it]?.sleep },
+        )
+        MoodMetricGraph(
+            title = stringResource(R.string.mood_legend_stress),
+            color = MaterialTheme.colorScheme.error,
+            days = days,
+            valueOf = { byDay[it]?.stress },
+        )
+        MoodMetricGraph(
+            title = stringResource(R.string.mood_legend_mood),
+            color = MaterialTheme.colorScheme.tertiary,
+            days = days,
+            valueOf = { byDay[it]?.mood },
+        )
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             days.filterIndexed { i, _ -> i % 2 == 0 }.forEach { day ->
                 Text(
                     LocalDate.ofEpochDay(day).format(dayFmt),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoodMetricGraph(
+    title: String,
+    color: Color,
+    days: List<Long>,
+    valueOf: (Long) -> Int?,
+) {
+    val grid = MaterialTheme.colorScheme.surfaceVariant
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(title, style = MaterialTheme.typography.labelLarge, color = color)
+        Canvas(Modifier.fillMaxWidth().height(120.dp)) {
+            val slot = size.width / 14f
+            val barW = slot * 0.6f
+            val maxH = size.height - 10f
+            // Baseline.
+            drawLine(grid, Offset(0f, size.height - 2f), Offset(size.width, size.height - 2f), 2f)
+            days.forEachIndexed { i, day ->
+                val v = valueOf(day) ?: return@forEachIndexed
+                val h = (v / 100f * maxH).coerceAtLeast(2f)
+                drawRect(
+                    color = color,
+                    topLeft = Offset(i * slot + (slot - barW) / 2f, size.height - 2f - h),
+                    size = androidx.compose.ui.geometry.Size(barW, h),
                 )
             }
         }
