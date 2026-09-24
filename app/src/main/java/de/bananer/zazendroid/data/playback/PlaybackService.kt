@@ -81,7 +81,7 @@ class PlaybackService : Service() {
                 state.unit?.title ?: state.single?.title ?: getString(R.string.app_name),
             )
             .setContentText(
-                state.single?.let { it.authorName ?: it.categoryTitle }
+                state.single?.authorName
                     ?: state.courseTitle.ifEmpty { getString(R.string.notif_meditation) },
             )
             .setSmallIcon(R.drawable.ic_launcher_monochrome)

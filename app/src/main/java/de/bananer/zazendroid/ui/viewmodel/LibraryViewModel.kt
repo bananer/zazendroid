@@ -6,6 +6,7 @@ import de.bananer.zazendroid.data.catalog.AppInfo
 import de.bananer.zazendroid.data.catalog.CatalogErrorKind
 import de.bananer.zazendroid.data.catalog.CatalogRepository
 import de.bananer.zazendroid.data.catalog.CatalogState
+import de.bananer.zazendroid.data.catalog.Category
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.favorites.FavoriteEntry
@@ -28,12 +29,17 @@ sealed interface LibraryUiState {
     data class CatalogError(val kind: CatalogErrorKind) : LibraryUiState
     data class Ready(
         val appInfo: AppInfo,
+        val categories: List<Category>,
         val courses: List<Course>,
         val singles: List<Single>,
         val nextUp: List<NextUnit>,
         val favorites: List<FavoriteEntry>,
         val fromCache: Boolean,
-    ) : LibraryUiState
+        val loadedFrom: String,
+    ) : LibraryUiState {
+        private val titlesById: Map<String, String> by lazy { categories.associate { it.id to it.title } }
+        fun categoryTitle(id: String): String? = titlesById[id]
+    }
 }
 
 class LibraryViewModel(
@@ -55,11 +61,13 @@ class LibraryViewModel(
             is CatalogState.Error -> LibraryUiState.CatalogError(catalog.kind)
             is CatalogState.Ready -> LibraryUiState.Ready(
                 appInfo = catalog.catalog.appInfo,
+                categories = catalog.catalog.categories,
                 courses = catalog.catalog.courses,
                 singles = catalog.catalog.singles,
                 nextUp = ContinueQueue.nextUp(catalog.catalog.courses, progress),
                 favorites = FavoriteList.resolve(catalog.catalog.courses, catalog.catalog.singles, favorites),
                 fromCache = catalog.fromCache,
+                loadedFrom = catalog.catalog.loadedFrom,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryUiState.Loading)

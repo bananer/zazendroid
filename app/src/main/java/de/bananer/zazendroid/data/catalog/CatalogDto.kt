@@ -11,9 +11,12 @@ import kotlinx.serialization.Serializable
  * {
  *   "catalogVersion": 1,
  *   "appInfo": {"appName": "Zazen", "description": "Sit.", "version": 1},
+ *   "categories": [
+ *     {"id": "cat-basics", "title": "Basics", "prio": 10}
+ *   ],
  *   "courses": [
  *     {"id": "c1", "title": "Basics", "description": "Start here",
- *      "authorName": "Diana Winston", "categoryTitle": "Basics",
+ *      "authorName": "Diana Winston", "categoryId": "cat-basics",
  *      "units": [
  *        {"id": "u1", "title": "Breath", "audioUrl": "/audio/breath.mp3",
  *         "durationSeconds": 600, "startOfMeditationInSeconds": 30},
@@ -22,7 +25,7 @@ import kotlinx.serialization.Serializable
  *   ],
  *   "singles": [
  *     {"id": "s1", "title": "Quick Breath", "description": "Reset fast",
- *      "authorName": "Diana Winston", "categoryTitle": "Quick practices",
+ *      "authorName": "Diana Winston", "categoryId": "cat-basics",
  *      "durationSeconds": 300, "audioUrl": "/audio/quick-breath.mp3"}
  *   ]
  * }
@@ -36,7 +39,9 @@ import kotlinx.serialization.Serializable
  * - `audioUrl` may be absolute (`https://…`) or server-relative (`/audio/x.mp3`);
  *   the repository resolves relative URLs against the configured server base URL.
  *   This is the only URL rule (applies to singles too).
- * - `authorName`, `categoryTitle`, `startOfMeditationInSeconds` are optional
+ * - `categories` is prio-sorted by the mapper (missing prio sorts last, stable).
+ *   Display titles always resolve via `categories` id lookup, never denormalized.
+ * - `authorName`, `startOfMeditationInSeconds` are optional
  *   display/metadata fields; absent means unknown, never an error.
  * - `singles` is optional; absent means no singles.
  */
@@ -44,8 +49,16 @@ import kotlinx.serialization.Serializable
 data class CatalogDto(
     val catalogVersion: Int = 0,
     val appInfo: AppInfoDto,
+    val categories: List<CategoryDto> = emptyList(),
     val courses: List<CourseDto> = emptyList(),
     val singles: List<SingleDto> = emptyList(),
+)
+
+@Serializable
+data class CategoryDto(
+    val id: String = "",
+    val title: String = "",
+    val prio: Int = Int.MAX_VALUE,
 )
 
 @Serializable
@@ -61,7 +74,7 @@ data class CourseDto(
     val title: String = "",
     val description: String = "",
     val authorName: String? = null,
-    val categoryTitle: String? = null,
+    val categoryId: String = "",
     val units: List<UnitDto> = emptyList(),
 )
 
@@ -82,7 +95,7 @@ data class SingleDto(
     val title: String = "",
     val description: String = "",
     val authorName: String? = null,
-    val categoryTitle: String? = null,
+    val categoryId: String = "",
     @SerialName("durationSeconds")
     val durationSeconds: Long? = null,
     val audioUrl: String = "",

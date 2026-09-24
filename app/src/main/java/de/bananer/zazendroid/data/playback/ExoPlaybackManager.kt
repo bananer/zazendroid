@@ -185,7 +185,7 @@ class ExoPlaybackManager(
         _state.update {
             it.copy(
                 courseId = c?.id ?: s?.id,
-                courseTitle = c?.title ?: s?.categoryTitle ?: s?.authorName ?: "",
+                courseTitle = c?.title ?: s?.title ?: "",
                 unit = c?.units?.getOrNull(index),
                 single = s,
                 unitIndex = index,

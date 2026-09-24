@@ -12,15 +12,21 @@ private const val FIXTURE = """
 {
   "catalogVersion": 1,
   "appInfo": {"appName": "Zazen", "description": "Sit daily.", "version": 3},
+  "categories": [
+    {"id": "cat-sleep", "title": "Sleep", "prio": 5},
+    {"id": "cat-basics", "title": "Foundations", "prio": 10},
+    {"id": "", "title": "Bad", "prio": 1},
+    {"id": "cat-bad", "title": "", "prio": 1}
+  ],
   "courses": [
     {"id": "c1", "title": "Basics", "description": "Start here",
-     "authorName": "Diana Winston", "categoryTitle": "Foundations",
+     "authorName": "Diana Winston", "categoryId": "cat-basics",
      "units": [
        {"id": "u1", "title": "Breath", "audioUrl": "/audio/breath.mp3", "durationSeconds": 600, "startOfMeditationInSeconds": 30},
        {"id": "u2", "title": "Body", "audioUrl": "https://cdn.example.com/body.mp3"},
        {"id": "u3", "title": "Sound", "audioUrl": "audio/sound.mp3", "durationSeconds": 300}
      ]},
-    {"id": "c2", "title": "Sleep", "description": "Rest",
+    {"id": "c2", "title": "Sleep", "description": "Rest", "categoryId": "cat-sleep",
      "units": [
        {"id": "s1", "title": "Drift", "audioUrl": "/audio/drift.mp3"},
        {"id": "s2", "title": "Deep", "audioUrl": "https://cdn.example.com/deep.mp3", "durationSeconds": 900}
@@ -32,7 +38,7 @@ private const val FIXTURE = """
   ],
   "singles": [
     {"id": "s1", "title": "Quick Breath", "description": "Reset fast",
-     "authorName": "Diana Winston", "categoryTitle": "Quick practices",
+     "authorName": "Diana Winston", "categoryId": "cat-basics",
      "durationSeconds": 300, "audioUrl": "/audio/quick-breath.mp3"},
     {"id": "s2", "title": "Absolute Calm", "description": "Slow down",
      "audioUrl": "https://cdn.example.com/calm.mp3"},
@@ -57,8 +63,11 @@ class CatalogMapperTest {
         assertEquals("https://example.com/meditation/audio/sound.mp3", basics.units[2].audioUrl)
         assertEquals("Zazen", catalog.appInfo.appName)
         assertEquals("Diana Winston", basics.authorName)
-        assertEquals("Foundations", basics.categoryTitle)
+        assertEquals("cat-basics", basics.categoryId)
+        assertEquals("Foundations", catalog.categoryTitle("cat-basics"))
+        assertEquals(listOf("cat-sleep", "cat-basics"), catalog.categories.map { it.id })
         assertEquals(null, catalog.courses[1].authorName)
+        assertEquals("cat-sleep", catalog.courses[1].categoryId)
         assertEquals(30L, basics.units[0].startOfMeditationInSeconds)
         assertEquals(null, basics.units[1].startOfMeditationInSeconds)
         assertEquals(0, basics.units[0].orderIndex)
@@ -72,7 +81,7 @@ class CatalogMapperTest {
         assertEquals("Quick Breath", quick.title)
         assertEquals("Reset fast", quick.description)
         assertEquals("Diana Winston", quick.authorName)
-        assertEquals("Quick practices", quick.categoryTitle)
+        assertEquals("cat-basics", quick.categoryId)
         assertEquals(300L, quick.durationSeconds)
         assertEquals("https://example.com/meditation/audio/quick-breath.mp3", quick.audioUrl)
         assertEquals("https://cdn.example.com/calm.mp3", catalog.singles[1].audioUrl)

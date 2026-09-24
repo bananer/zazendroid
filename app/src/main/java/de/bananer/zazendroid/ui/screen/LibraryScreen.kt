@@ -175,7 +175,7 @@ fun HomeScreen(
                             onPreloadSingle(entry.single)
                         }
                     }
-                    FavoriteCard(entry, onClick = { onFavoriteClick(entry) })
+                    FavoriteCard(entry, categoryTitle = s::categoryTitle, onClick = { onFavoriteClick(entry) })
                 }
             }
         }
@@ -241,7 +241,7 @@ fun SinglesScreen(
                     ) {
                         Column(Modifier.weight(1f)) {
                             Text(single.title, style = MaterialTheme.typography.titleMedium)
-                            val meta = listOfNotNull(single.authorName, single.categoryTitle)
+                            val meta = listOfNotNull(single.authorName, s.categoryTitle(single.categoryId))
                                 .joinToString(" · ")
                             if (meta.isNotEmpty()) {
                                 Text(
@@ -297,7 +297,7 @@ private fun CourseCard(course: Course, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FavoriteCard(entry: FavoriteEntry, onClick: () -> Unit) {
+private fun FavoriteCard(entry: FavoriteEntry, categoryTitle: (String) -> String?, onClick: () -> Unit) {
     val singleFallback = stringResource(R.string.eyebrow_single)
     val (eyebrow, title, sub) = when (entry) {
         is FavoriteEntry.UnitFavorite ->
@@ -312,7 +312,7 @@ private fun FavoriteCard(entry: FavoriteEntry, onClick: () -> Unit) {
             )
         is FavoriteEntry.SingleFavorite ->
             Triple(
-                listOfNotNull(entry.single.authorName, entry.single.categoryTitle)
+                listOfNotNull(entry.single.authorName, categoryTitle(entry.single.categoryId))
                     .joinToString(" · ").ifEmpty { singleFallback },
                 entry.single.title,
                 formatMs(entry.single.durationSeconds?.times(1000)),
