@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Wire contract for `GET <serverUrl>/catalog.json`.
+ * Wire contract for `GET <serverUrl>/catalog.zazen.json`.
  *
  * Sample:
  * ```json

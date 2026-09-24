@@ -30,7 +30,7 @@ enum class CatalogErrorKind {
 
 /**
  * Single JSON endpoint fetched with plain OkHttp + kotlinx.serialization:
- * `GET <serverUrl>/catalog.json` (`serverUrl` joined as `trimEnd('/') + "/catalog.json"`).
+ * `GET <serverUrl>/catalog.zazen.json` (`serverUrl` joined as `trimEnd('/') + "/catalog.zazen.json"`).
  * Fixed filename; no per-course fetching.
  *
  * Load rule: on server-URL change or [refresh], emit [CatalogState.Loading]
@@ -99,7 +99,7 @@ class CatalogRepository(
     }
 
     private suspend fun fetch(baseUrl: String): String = withContext(Dispatchers.IO) {
-        val url = baseUrl.trimEnd('/') + "/catalog.json"
+        val url = baseUrl.trimEnd('/') + "/catalog.zazen.json"
         val request = Request.Builder().url(url).get().build()
         okHttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) throw CatalogHttpException(response.code)
