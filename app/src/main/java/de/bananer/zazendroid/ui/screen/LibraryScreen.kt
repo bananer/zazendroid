@@ -42,10 +42,10 @@ import de.bananer.zazendroid.data.catalog.Category
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.favorites.FavoriteEntry
-import de.bananer.zazendroid.ui.viewmodel.LibraryUiState
-import de.bananer.zazendroid.ui.viewmodel.LibraryViewModel
 import de.bananer.zazendroid.ui.formatMs
 import de.bananer.zazendroid.ui.theme.rememberCourseBrush
+import de.bananer.zazendroid.ui.viewmodel.LibraryUiState
+import de.bananer.zazendroid.ui.viewmodel.LibraryViewModel
 
 /** Non-Ready library states render identically on every tab. */
 @Composable
@@ -88,6 +88,8 @@ fun LibraryTabScaffold(
 @Composable
 fun HomeScreen(
     vm: LibraryViewModel,
+    moodComplete: Boolean,
+    onMoodClick: () -> Unit,
     onContinueClick: (course: Course, index: Int) -> Unit,
     onFavoriteClick: (entry: FavoriteEntry) -> Unit,
     onPreload: (course: Course, index: Int) -> Unit,
@@ -99,6 +101,21 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
+            item {
+                Card(
+                    onClick = onMoodClick,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondary),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        stringResource(
+                            if (moodComplete) R.string.mood_view_history else R.string.mood_invite,
+                        ),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(20.dp),
+                    )
+                }
+            }
             item {
                 Text(s.appInfo.appName, style = MaterialTheme.typography.headlineMedium)
                 Text(

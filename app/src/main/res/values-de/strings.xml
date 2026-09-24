@@ -28,6 +28,20 @@
     <string name="search_type_course">Kurs</string>
     <string name="search_type_unit">Einheit · %1$s</string>
     <string name="search_type_single">Single</string>
+    <string name="mood_invite">Wie geht es dir heute? Jetzt einchecken</string>
+    <string name="mood_view_history">Heute erfasst. Verlauf ansehen</string>
+    <string name="mood_q_sleep">Hast du gut geschlafen?</string>
+    <string name="mood_q_stress">Fühlst du dich gestresst?</string>
+    <string name="mood_q_mood">Bist du zufrieden?</string>
+    <string name="mood_ring_cd">Stimmungsregler. Ziehen zum Einstellen. Der Wert wird nicht angezeigt.</string>
+    <string name="mood_saved_title">Gespeichert. Deine letzten 14 Tage</string>
+    <string name="mood_history_title">Deine letzten 14 Tage</string>
+    <string name="mood_legend_sleep">Schlaf</string>
+    <string name="mood_legend_stress">Stress (höher = gestresster)</string>
+    <string name="mood_legend_mood">Zufriedenheit</string>
+    <string name="action_next">Weiter</string>
+    <string name="action_finish">Fertig</string>
+    <string name="action_back">Zurück</string>
     <string name="unit_position">Einheit %1$d von %2$d</string>
     <string name="home_empty">Noch nichts begonnen. Wähle einen Kurs oder ein Single.</string>
     <string name="singles_empty">Noch keine Singles auf diesem Server.</string>

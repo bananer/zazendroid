@@ -50,9 +50,11 @@ import de.bananer.zazendroid.ui.viewmodel.PlayerViewModel
 import de.bananer.zazendroid.ui.screen.ServerSetupScreen
 import de.bananer.zazendroid.ui.viewmodel.ServerSetupViewModel
 import de.bananer.zazendroid.ui.viewmodel.SetupUiState
+import de.bananer.zazendroid.ui.screen.MoodScreen
 import de.bananer.zazendroid.ui.screen.SearchScreen
 import de.bananer.zazendroid.ui.screen.SinglesScreen
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
+import de.bananer.zazendroid.ui.viewmodel.MoodViewModel
 
 private data class Tab(val route: String, val labelRes: Int, val icon: ImageVector)
 
@@ -165,10 +167,19 @@ class MainActivity : ComponentActivity() {
                                     }
                                 },
                             ) { inner ->
+                                val moodVm: MoodViewModel = viewModel(
+                                    factory = vmFactory { MoodViewModel(container.moodRepository) },
+                                )
                                 NavHost(nav, startDestination = "home", modifier = Modifier.padding(inner)) {
                                     composable("home") {
+                                        val today by moodVm.today.collectAsState()
                                         HomeScreen(
                                             libraryVm,
+                                            moodComplete = today != null,
+                                            onMoodClick = {
+                                                moodVm.enter(today != null)
+                                                nav.navigate("mood")
+                                            },
                                             onContinueClick = { course, index ->
                                                 container.playbackManager.play(course, index)
                                                 nav.navigate("player")
@@ -193,6 +204,9 @@ class MainActivity : ComponentActivity() {
                                             },
                                             onResetServer = { libraryVm.resetServer() },
                                         )
+                                    }
+                                    composable("mood") {
+                                        MoodScreen(moodVm, onDone = { nav.navigateUp() })
                                     }
                                     composable("courses") {
                                         CoursesScreen(

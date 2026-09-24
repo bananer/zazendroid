@@ -7,7 +7,10 @@ import de.bananer.zazendroid.data.catalog.CatalogRepository
 import de.bananer.zazendroid.data.favorites.FavoritesRepository
 import de.bananer.zazendroid.data.favorites.RoomFavoritesRepository
 import de.bananer.zazendroid.data.local.MIGRATION_1_2
+import de.bananer.zazendroid.data.local.MIGRATION_2_3
 import de.bananer.zazendroid.data.local.ZazenDb
+import de.bananer.zazendroid.data.mood.MoodRepository
+import de.bananer.zazendroid.data.mood.RoomMoodRepository
 import de.bananer.zazendroid.data.playback.ExoPlaybackManager
 import de.bananer.zazendroid.data.playback.PlaybackManager
 import de.bananer.zazendroid.data.progress.ProgressRepository
@@ -54,7 +57,7 @@ class AppContainer(context: Context) {
 
     val db: ZazenDb by lazy {
         Room.databaseBuilder(appContext, ZazenDb::class.java, "zazen.db")
-            .addMigrations(MIGRATION_1_2)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
             .build()
     }
 
@@ -64,6 +67,10 @@ class AppContainer(context: Context) {
 
     val favoritesRepository: FavoritesRepository by lazy {
         RoomFavoritesRepository(db.favoriteDao())
+    }
+
+    val moodRepository: MoodRepository by lazy {
+        RoomMoodRepository(db.moodDao())
     }
 
     val catalogRepository: CatalogRepository by lazy {

@@ -28,6 +28,20 @@
     <string name="search_type_course">Course</string>
     <string name="search_type_unit">Unit · %1$s</string>
     <string name="search_type_single">Single</string>
+    <string name="mood_invite">How are you today? Check in</string>
+    <string name="mood_view_history">Today tracked. View history</string>
+    <string name="mood_q_sleep">Did you sleep well?</string>
+    <string name="mood_q_stress">Do you feel stressed?</string>
+    <string name="mood_q_mood">Are you satisfied?</string>
+    <string name="mood_ring_cd">Mood dial. Drag to set your answer. Value is not shown.</string>
+    <string name="mood_saved_title">Saved. Your last 14 days</string>
+    <string name="mood_history_title">Your last 14 days</string>
+    <string name="mood_legend_sleep">Sleep</string>
+    <string name="mood_legend_stress">Stress (higher = more stressed)</string>
+    <string name="mood_legend_mood">Satisfaction</string>
+    <string name="action_next">Next</string>
+    <string name="action_finish">Done</string>
+    <string name="action_back">Back</string>
     <string name="unit_position">Unit %1$d of %2$d</string>
     <string name="home_empty">Nothing in progress yet. Pick a course or a single to begin.</string>
     <string name="singles_empty">No singles on this server yet.</string>
