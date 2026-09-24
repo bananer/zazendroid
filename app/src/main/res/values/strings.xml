@@ -28,7 +28,7 @@
     <string name="search_type_course">Course</string>
     <string name="search_type_unit">Unit · %1$s</string>
     <string name="search_type_single">Single</string>
-    <string name="mood_invite">How are you today? Check in</string>
+    <string name="mood_invite">Record diary</string>
     <string name="mood_view_history">Today tracked. View history</string>
     <string name="mood_q_sleep">Did you sleep well?</string>
     <string name="mood_q_stress">Do you feel stressed?</string>
