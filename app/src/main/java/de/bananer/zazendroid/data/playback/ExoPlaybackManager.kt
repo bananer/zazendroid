@@ -39,6 +39,7 @@ class ExoPlaybackManager(
 
     private var course: Course? = null
     private var single: Single? = null
+    private var currentUnitIndex: Int = 0
     private var pollJob: Job? = null
 
     val player: ExoPlayer by lazy {
@@ -49,22 +50,13 @@ class ExoPlaybackManager(
 
     private val listener = object : Player.Listener {
         override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-            if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
-                // currentMediaItemIndex already points at the new item; the one
-                // we left finished playing.
-                course?.let { c ->
-                    val prev = player.currentMediaItemIndex - 1
-                    if (prev >= 0) scope.launch { progress.markCompleted(c.id, prev) }
-                }
-            }
             publish()
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
             if (playbackState == Player.STATE_ENDED) {
                 course?.let { c ->
-                    val last = player.currentMediaItemIndex
-                    scope.launch { progress.markCompleted(c.id, last) }
+                    scope.launch { progress.markCompleted(c.id, currentUnitIndex) }
                 }
             }
             publish()
@@ -88,14 +80,20 @@ class ExoPlaybackManager(
         startPlayback()
     }
 
+    /**
+     * Loads only the tapped unit, never the rest of the course: Exo treats
+     * multiple media items as a playlist and auto-advances, but playback
+     * MUST stop when the current unit finishes.
+     */
     override fun queue(course: Course, startIndex: Int) {
         require(course.units.isNotEmpty()) { "course has no units" }
         this.course = course
         this.single = null
+        this.currentUnitIndex = startIndex.coerceIn(course.units.indices)
         _state.update { it.copy(error = null) }
         player.setMediaItems(
-            course.units.map { MediaItem.fromUri(it.audioUrl) },
-            startIndex.coerceIn(course.units.indices),
+            listOf(MediaItem.fromUri(course.units[currentUnitIndex].audioUrl)),
+            0,
             0L,
         )
         player.prepare()
@@ -123,8 +121,8 @@ class ExoPlaybackManager(
     override fun preload(course: Course, startIndex: Int) {
         if (player.isPlaying || player.mediaItemCount > 0 || course.units.isEmpty()) return
         player.setMediaItems(
-            course.units.map { MediaItem.fromUri(it.audioUrl) },
-            startIndex.coerceIn(course.units.indices),
+            listOf(MediaItem.fromUri(course.units[startIndex.coerceIn(course.units.indices)].audioUrl)),
+            0,
             0L,
         )
         player.prepare()
@@ -181,7 +179,7 @@ class ExoPlaybackManager(
     private fun publish() {
         val c = course
         val s = single
-        val index = if (player.mediaItemCount > 0) player.currentMediaItemIndex else 0
+        val index = if (c != null) currentUnitIndex else 0
         _state.update {
             it.copy(
                 courseId = c?.id ?: s?.id,
