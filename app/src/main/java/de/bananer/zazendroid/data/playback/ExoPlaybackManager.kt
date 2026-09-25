@@ -1,12 +1,11 @@
 package de.bananer.zazendroid.data.playback
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
@@ -25,8 +24,8 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * ExoPlayer-backed [PlaybackManager]. Owns one app-scoped player (surfaces to
- * [PlaybackService] for background + notification); UI observes [state] only.
+ * ExoPlayer-backed [PlaybackManager]. Owns one app-scoped player; [PlaybackService]
+ * wraps it in a MediaSession for the system media carousel. UI observes [state] only.
  */
 class ExoPlaybackManager(
     private val appContext: Context,
@@ -91,8 +90,20 @@ class ExoPlaybackManager(
         this.single = null
         this.currentUnitIndex = startIndex.coerceIn(course.units.indices)
         _state.update { it.copy(error = null) }
+        val unit = course.units[currentUnitIndex]
         player.setMediaItems(
-            listOf(MediaItem.fromUri(course.units[currentUnitIndex].audioUrl)),
+            listOf(
+                MediaItem.Builder()
+                    .setUri(unit.audioUrl)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(unit.title)
+                            .setArtist(course.title)
+                            .setAlbumTitle(course.title)
+                            .build(),
+                    )
+                    .build(),
+            ),
             0,
             0L,
         )
@@ -111,7 +122,21 @@ class ExoPlaybackManager(
         this.course = null
         this.single = single
         _state.update { it.copy(error = null) }
-        player.setMediaItems(listOf(MediaItem.fromUri(single.audioUrl)), 0, 0L)
+        player.setMediaItems(
+            listOf(
+                MediaItem.Builder()
+                    .setUri(single.audioUrl)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(single.title)
+                            .setArtist(single.authorName)
+                            .build(),
+                    )
+                    .build(),
+            ),
+            0,
+            0L,
+        )
         player.prepare()
         player.pause()
         publish()
@@ -120,8 +145,20 @@ class ExoPlaybackManager(
 
     override fun preload(course: Course, startIndex: Int) {
         if (player.isPlaying || player.mediaItemCount > 0 || course.units.isEmpty()) return
+        val unit = course.units[startIndex.coerceIn(course.units.indices)]
         player.setMediaItems(
-            listOf(MediaItem.fromUri(course.units[startIndex.coerceIn(course.units.indices)].audioUrl)),
+            listOf(
+                MediaItem.Builder()
+                    .setUri(unit.audioUrl)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(unit.title)
+                            .setArtist(course.title)
+                            .setAlbumTitle(course.title)
+                            .build(),
+                    )
+                    .build(),
+            ),
             0,
             0L,
         )
@@ -131,7 +168,21 @@ class ExoPlaybackManager(
 
     override fun preloadSingle(single: Single) {
         if (player.isPlaying || player.mediaItemCount > 0) return
-        player.setMediaItems(listOf(MediaItem.fromUri(single.audioUrl)), 0, 0L)
+        player.setMediaItems(
+            listOf(
+                MediaItem.Builder()
+                    .setUri(single.audioUrl)
+                    .setMediaMetadata(
+                        MediaMetadata.Builder()
+                            .setTitle(single.title)
+                            .setArtist(single.authorName)
+                            .build(),
+                    )
+                    .build(),
+            ),
+            0,
+            0L,
+        )
         player.prepare()
         player.pause()
     }
@@ -160,12 +211,13 @@ class ExoPlaybackManager(
         player.seekTo(positionMs.coerceAtLeast(0L))
         publish()
     }
+
+    /**
+     * Starts the session service only for real playback. The session then
+     * foregrounds itself while playing; idle preloads/queue never post a
+     * notification, and the resumable paused card is managed by the service.
+     */
     override fun ensureForegroundService() {
-        if (ContextCompat.checkSelfPermission(appContext, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
         ContextCompat.startForegroundService(
             appContext,
             Intent(appContext, PlaybackService::class.java),

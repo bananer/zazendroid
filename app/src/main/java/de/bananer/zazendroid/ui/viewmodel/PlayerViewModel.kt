@@ -21,7 +21,6 @@ class PlayerViewModel(
     private val playback: PlaybackManager,
     private val favorites: FavoritesRepository,
 ) : ViewModel() {
-    fun ensureForegroundService() = playback.ensureForegroundService()
     val uiState: StateFlow<PlaybackUiState> = playback.state
 
     val isFavorite: StateFlow<Boolean> = combine(

@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.room.ktx)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.common)
+    implementation(libs.media3.session)
     implementation(libs.navigation.compose)
     ksp(libs.room.compiler)
     testImplementation(libs.junit)

@@ -46,9 +46,9 @@ interface PlaybackManager {
     fun seekTo(positionMs: Long)
     fun seekBy(deltaMs: Long)
     /**
-     * Starts the background service (no-op when already running or when the
-     * notification permission is still missing — in that case playback stays
-     * in-activity until permission is granted and this is called again).
+     * Starts the session service ahead of real playback only (play/toggle).
+     * Never called for queue/preload or screen-open: the session foregrounds
+     * itself while playing and owns the resumable paused card.
      */
     fun ensureForegroundService()
 }

@@ -57,17 +57,17 @@ fun PlayerScreen(vm: PlayerViewModel) {
     val isFavorite by vm.isFavorite.collectAsState()
     val hasTrack = state.unit != null || state.single != null
 
+    // Notification permission is asked upfront so the session service may post
+    // the media card during real playback. Nothing here starts the service:
+    // ExoPlaybackManager does that only on play/toggle, so opening the player
+    // can never conjure a stray notification.
     val context = LocalContext.current
-    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) vm.ensureForegroundService()
-    }
+    val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
     LaunchedEffect(Unit) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
             launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            vm.ensureForegroundService()
         }
     }
 
