@@ -1,7 +1,10 @@
 package de.bananer.zazendroid.ui.screen
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,16 +20,23 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -54,14 +64,42 @@ object MoodRing {
 }
 
 /**
+ * Fill color per question; doubles as the history graph color for the same
+ * metric, so the ring and graph always match.
+ */
+@Composable
+private fun MoodStep.color(): Color =
+    when (this) {
+        MoodStep.SLEEP -> MaterialTheme.colorScheme.primary
+        MoodStep.STRESS -> MaterialTheme.colorScheme.error
+        MoodStep.MOOD -> MaterialTheme.colorScheme.tertiary
+        // Ring is hidden on RESULT; value only feeds the fade target.
+        MoodStep.RESULT -> MaterialTheme.colorScheme.primary
+    }
+
+/**
  * 0–100 circular setter. No numeric label, no scale marks — only the ring.
  * Tap on the ring or drag; TalkBack via increment/decrement actions.
  */
 @Composable
-fun MoodRingInput(value: Int, onValueChange: (Int) -> Unit, modifier: Modifier = Modifier) {
+fun MoodRingInput(
+    value: Int,
+    color: Color,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val track = MaterialTheme.colorScheme.surfaceVariant
-    val fill = MaterialTheme.colorScheme.primary
     val desc = stringResource(R.string.mood_ring_cd)
+    val haptics = LocalHapticFeedback.current
+    // pointerInput(Unit) below never restarts; read through a stable holder
+    // so the move tick only fires on real value changes.
+    val latest by rememberUpdatedState(value)
+    fun emit(v: Int) {
+        if (v != latest) {
+            haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onValueChange(v)
+        }
+    }
     Canvas(
         modifier = modifier.size(240.dp)
             .semantics {
@@ -75,7 +113,7 @@ fun MoodRingInput(value: Int, onValueChange: (Int) -> Unit, modifier: Modifier =
                         down.consume()
                         val w = size.width.toFloat()
                         val c = Offset(w / 2f, w / 2f)
-                        onValueChange(
+                        emit(
                             MoodRing.angleToValue(
                                 down.position.x - c.x,
                                 down.position.y - c.y,
@@ -89,7 +127,7 @@ fun MoodRingInput(value: Int, onValueChange: (Int) -> Unit, modifier: Modifier =
                     change.consume()
                     val w = size.width.toFloat()
                     val c = Offset(w / 2f, w / 2f)
-                    onValueChange(MoodRing.angleToValue(change.position.x - c.x, change.position.y - c.y))
+                    emit(MoodRing.angleToValue(change.position.x - c.x, change.position.y - c.y))
                 }
             },
     ) {
@@ -103,7 +141,7 @@ fun MoodRingInput(value: Int, onValueChange: (Int) -> Unit, modifier: Modifier =
         )
         if (value > 0) {
             drawArc(
-                color = fill,
+                color = color,
                 startAngle = -90f,
                 sweepAngle = value / 100f * 360f,
                 useCenter = false,
@@ -119,6 +157,24 @@ fun MoodScreen(vm: MoodViewModel, onDone: () -> Unit) {
     val value by vm.value.collectAsState()
     val saving by vm.saving.collectAsState()
     val history by vm.history.collectAsState()
+    // Ring fades to the next question's graph color on confirm (~500 ms).
+    val ringColor by animateColorAsState(
+        targetValue = step.color(),
+        animationSpec = tween(500),
+        label = "moodRing",
+    )
+    // Short scale pulse confirming each answer (Next/Finish only, not Back);
+    // skipped on first entry and on RESULT (the ring is unmounted there).
+    val pulse = remember { Animatable(1f) }
+    var prevStep by remember { mutableStateOf(step) }
+    LaunchedEffect(step) {
+        if (prevStep != step && step.ordinal > prevStep.ordinal && step != MoodStep.RESULT) {
+            pulse.snapTo(1.06f)
+            pulse.animateTo(1f, tween(500))
+        }
+        prevStep = step
+    }
+
     Column(
         modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
@@ -132,7 +188,15 @@ fun MoodScreen(vm: MoodViewModel, onDone: () -> Unit) {
                     else -> stringResource(R.string.mood_q_mood)
                 }
                 Text(question, style = MaterialTheme.typography.headlineSmall)
-                MoodRingInput(value = value, onValueChange = vm::setValue)
+                MoodRingInput(
+                    value = value,
+                    color = ringColor,
+                    onValueChange = vm::setValue,
+                    modifier = Modifier.graphicsLayer {
+                        scaleX = pulse.value
+                        scaleY = pulse.value
+                    },
+                )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -187,19 +251,19 @@ private fun MoodHistoryGraphs(history: List<MoodCheckin>) {
     ) {
         MoodMetricGraph(
             title = stringResource(R.string.mood_legend_sleep),
-            color = MaterialTheme.colorScheme.primary,
+            color = MoodStep.SLEEP.color(),
             days = days,
             valueOf = { byDay[it]?.sleep },
         )
         MoodMetricGraph(
             title = stringResource(R.string.mood_legend_stress),
-            color = MaterialTheme.colorScheme.error,
+            color = MoodStep.STRESS.color(),
             days = days,
             valueOf = { byDay[it]?.stress },
         )
         MoodMetricGraph(
             title = stringResource(R.string.mood_legend_mood),
-            color = MaterialTheme.colorScheme.tertiary,
+            color = MoodStep.MOOD.color(),
             days = days,
             valueOf = { byDay[it]?.mood },
         )
