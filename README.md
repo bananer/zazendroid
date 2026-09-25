@@ -4,7 +4,7 @@ There are many meditation apps, but this one is mine.
 
 Mindfully vibecoded.
 
-<a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://add/https://github.com/bananer/zazendroid">
+<a href="https://apps.obtainium.imranr.dev/redirect.html?r=obtainium%3A%2F%2Fadd%2Fhttps%3A%2F%2Fgithub.com%2Fbananer%2Fzazendroid">
 <img src="https://github.com/ImranR98/Obtainium/blob/main/assets/graphics/badge_obtainium.png?raw=true"
 alt="Get it on Obtainium" height="80" />
 </a>
