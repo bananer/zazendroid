@@ -32,6 +32,56 @@ class FreeMeditationAudioTest {
     }
 
     @Test
+    fun `gong matches the reference ring length`() {
+        assertEquals(32.0, Gong.DURATION_SECONDS, 0.0)
+        assertEquals(32 * Gong.SAMPLE_RATE, Gong.frameCount)
+        // The original still rings well past 15 s; a 4 s strike would be silent.
+        val ring = Gong.samples().copyOfRange(15 * Gong.SAMPLE_RATE, 16 * Gong.SAMPLE_RATE)
+        assertTrue("gong is silent at 15 s", ring.maxOf { abs(it.toInt()) } > 100)
+    }
+
+    @Test
+    fun `gong rings at the reference pitch`() {
+        // After ~5 s the FM index is negligible, leaving the carrier plus the
+        // 5.3 Hz tremolo. Count zero crossings over one second as a cheap pitch
+        // check without pulling an FFT into the JVM test.
+        val gong = Gong.samples()
+        val start = 5 * Gong.SAMPLE_RATE
+        val end = 6 * Gong.SAMPLE_RATE
+        var crossings = 0
+        for (i in start + 1 until end) {
+            if ((gong[i - 1] < 0) != (gong[i] < 0)) crossings++
+        }
+        assertEquals(Gong.PITCH_HZ * 2, crossings.toDouble(), 2.0)
+    }
+
+    @Test
+    fun `glitch bursts are localized and stay below the gong peak`() {
+        val withGlitches = Gong.render(withGlitches = true)
+        val clean = Gong.render(withGlitches = false)
+
+        // First burst: 0.42-0.44 s. It must actually alter the samples.
+        val burstStart = (0.42 * Gong.SAMPLE_RATE).toInt()
+        val burstEnd = (0.44 * Gong.SAMPLE_RATE).toInt()
+        assertTrue(
+            "glitch burst missing",
+            (burstStart until burstEnd).any { withGlitches[it] != clean[it] },
+        )
+
+        // 2.0-2.1 s is between bursts: the carrier must be untouched.
+        val cleanStart = (2.0 * Gong.SAMPLE_RATE).toInt()
+        val cleanEnd = (2.1 * Gong.SAMPLE_RATE).toInt()
+        assertTrue(
+            "clean window altered",
+            (cleanStart until cleanEnd).all { withGlitches[it] == clean[it] },
+        )
+
+        // 0.22 peak + 0.0035 glitch = 0.2235; leave a little headroom.
+        val bound = (0.225 * Short.MAX_VALUE).toInt()
+        assertTrue("glitch exceeds expected peak", withGlitches.maxOf { abs(it.toInt()) } <= bound)
+    }
+
+    @Test
     fun `score renders gong at head silence in middle gong at tail`() {
         val gong = ShortArray(1_000) { (it % 101).toShort() }
         val score = FreeScore(totalFrames = 100_000L, gong = gong)

@@ -39,9 +39,9 @@ class ExoPlaybackManager(
 ) : PlaybackManager {
 
     init {
-        // Gong.samples() renders ~1.2M samples on first use (tens of ms on the
-        // main thread); prewarm in the background so the first free-meditation
-        // start doesn't jank. The lazy is synchronized, so a racing start waits.
+        // Gong.samples() renders a 32 s strike (~1.5M samples) on first use;
+        // prewarm in the background so the first free-meditation start doesn't
+        // jank. The lazy is synchronized, so a racing start waits.
         scope.launch(Dispatchers.Default) { Gong.samples() }
     }
 

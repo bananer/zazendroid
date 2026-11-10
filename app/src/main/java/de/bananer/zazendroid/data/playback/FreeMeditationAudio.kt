@@ -1,10 +1,11 @@
 package de.bananer.zazendroid.data.playback
 
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.min
 import kotlin.math.sin
-import kotlin.math.tanh
 
 /**
  * Pure PCM synthesis for free meditation. No audio files: the gong is rendered
@@ -12,20 +13,60 @@ import kotlin.math.tanh
  */
 internal object Gong {
     const val SAMPLE_RATE = 48_000
-    const val DURATION_SECONDS = 4.0
 
-    /** Inharmonic partials (frequency Hz, relative amplitude, decay per second). */
-    private val PARTIALS = arrayOf(
-        Triple(98.0, 1.00, 1.2),
-        Triple(164.8, 0.55, 1.9),
-        Triple(232.0, 0.40, 2.6),
-        Triple(341.0, 0.30, 3.4),
-        Triple(526.0, 0.20, 4.4),
-        Triple(812.0, 0.12, 5.6),
+    /**
+     * The reference recording's gong starts ~31.8 s before the end and rings
+     * out to it; 32 s keeps that length and places the tail strike at 4:28 of a
+     * 5-minute session, like the original.
+     */
+    const val DURATION_SECONDS = 32.0
+
+    /** Dominant mode of the reference gong, measured at 598.25 Hz. */
+    internal const val PITCH_HZ = 598.25
+
+    // Deliberately not the recording's acoustic partial stack: two-operator
+    // phase modulation at a 2:1 ratio gives a glassy, hollow digital bell, and
+    // the index collapses fast so the long tail is a pure carrier.
+    private const val MODULATOR_RATIO = 2.0
+    private const val MOD_INDEX = 1.5
+    private const val MOD_DECAY_SECONDS = 1.2
+
+    // The recording's 592.9/598.25 doublet beats at 5.3 Hz; a digital LFO
+    // reproduces that pulse without imitating the two acoustic modes.
+    private const val TREMOLO_HZ = 5.3
+    private const val TREMOLO_DEPTH = 0.15
+
+    /**
+     * Measured T60 of the reference's 598 Hz mode (37.3 s), not the 32 s
+     * buffer end: a 32 s T60 measurably under-runs the recording's tail by
+     * 4-5 dB at 15-20 s, which reads as silence on small speakers.
+     */
+    private const val T60_SECONDS = 37.0
+    private const val ATTACK_SECONDS = 0.005
+
+    /** Same peak as the reference strike (~-13 dBFS); a 32 s ring at the old
+     *  0.55 peak would be over 11 dB louder on average than the recording. */
+    private const val PEAK = 0.22
+    private const val TWO_PI = 2.0 * PI
+
+    /**
+     * Sparse digital glitches: (start s, duration s, peak amplitude). These are
+     * added after normalisation, so levels are absolute. Short sample-and-hold
+     * noise bursts, all below -49 dBFS peak, giving the synthetic strike a bit
+     * of digital texture without turning it into a noise effect.
+     */
+    private data class Glitch(val start: Double, val duration: Double, val level: Double)
+
+    private val GLITCHES = arrayOf(
+        Glitch(0.42, 0.020, 0.0035),
+        Glitch(1.85, 0.012, 0.0025),
+        Glitch(4.60, 0.030, 0.0035),
+        Glitch(8.30, 0.016, 0.0030),
+        Glitch(13.40, 0.024, 0.0025),
+        Glitch(22.00, 0.018, 0.0012),
     )
 
-    private const val ATTACK_SECONDS = 0.02
-    private const val PEAK = 0.55
+    private const val GLITCH_HOLD_FRAMES = 16
 
     val frameCount: Int = (SAMPLE_RATE * DURATION_SECONDS).toInt()
 
@@ -34,29 +75,65 @@ internal object Gong {
     /** One strike, mono 16-bit at [SAMPLE_RATE]; shared immutable buffer. */
     fun samples(): ShortArray = cached
 
+    /** Deterministic xorshift step; keeps the glitch layer reproducible. */
+    private fun noiseStep(state: Int): Int {
+        var x = state
+        x = x xor (x shl 13)
+        x = x xor (x ushr 17)
+        x = x xor (x shl 5)
+        return x
+    }
+
     /** Renders one strike as mono 16-bit samples at [SAMPLE_RATE]. Deterministic. */
-    fun render(): ShortArray {
+    fun render(): ShortArray = render(withGlitches = true)
+
+    /** [withGlitches] is a test seam; production always includes the texture. */
+    internal fun render(withGlitches: Boolean): ShortArray {
         val totalFrames = frameCount
         val raw = DoubleArray(totalFrames)
-        for ((freq, amp, decay) in PARTIALS) {
-            val w = 2.0 * PI * freq / SAMPLE_RATE
-            for (i in 0 until totalFrames) {
-                val t = i.toDouble() / SAMPLE_RATE
-                val attack = min(1.0, t / ATTACK_SECONDS)
-                raw[i] += amp * exp(-decay * t) * attack * sin(w * i)
-            }
+        // exp(-ln(1000) * t / T60) is exactly -60 dB at t = T60.
+        val decay = ln(1000.0) / T60_SECONDS
+        val carrierOmega = TWO_PI * PITCH_HZ
+        val modulatorOmega = carrierOmega * MODULATOR_RATIO
+        val tremoloOmega = TWO_PI * TREMOLO_HZ
+        for (i in 0 until totalFrames) {
+            val t = i.toDouble() / SAMPLE_RATE
+            val attack = min(1.0, t / ATTACK_SECONDS)
+            val envelope = exp(-decay * t)
+            val index = MOD_INDEX * exp(-t / MOD_DECAY_SECONDS)
+            val tremolo = 1.0 + TREMOLO_DEPTH * sin(tremoloOmega * t)
+            val phase = carrierOmega * t + index * sin(modulatorOmega * t)
+            raw[i] = envelope * attack * tremolo * sin(phase)
         }
         var peak = 0.0
         for (i in 0 until totalFrames) {
-            raw[i] = tanh(raw[i])
-            val a = kotlin.math.abs(raw[i])
+            val a = abs(raw[i])
             if (a > peak) peak = a
         }
         val out = ShortArray(totalFrames)
         if (peak > 0.0) {
             val scale = PEAK / peak
+            var noiseState = 0x1F123BB5
+            var heldNoise = 0.0
+            var hold = 0
             for (i in 0 until totalFrames) {
-                out[i] = (raw[i] * scale * Short.MAX_VALUE).toInt().toShort()
+                val t = i.toDouble() / SAMPLE_RATE
+                if (hold == 0) {
+                    noiseState = noiseStep(noiseState)
+                    heldNoise = noiseState / 2_147_483_648.0
+                    hold = GLITCH_HOLD_FRAMES
+                }
+                hold--
+                var gate = 0.0
+                for (g in GLITCHES) {
+                    val phase = (t - g.start) / g.duration
+                    if (phase > 0.0 && phase < 1.0) {
+                        val level = sin(PI * phase) * g.level
+                        if (level > gate) gate = level
+                    }
+                }
+                val v = raw[i] * scale + if (withGlitches) heldNoise * gate else 0.0
+                out[i] = (v * Short.MAX_VALUE).toInt().toShort()
             }
         }
         return out

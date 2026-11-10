@@ -30,15 +30,17 @@ class FreeMeditationPlayerDeviceTest {
         }
         val p = player[0]!!
         inst.runOnMainSync {
-            p.start(1, "DeviceTest", "Artist")
+            p.start(5, "DeviceTest", "Artist")
             p.play()
-            p.seekTo(56_000L)
+            // 290 s lands inside the 32 s tail gong and snaps back to its
+            // start (268 s), so completion takes the full gong length.
+            p.seekTo(290_000L)
         }
         val t0 = SystemClock.elapsedRealtime()
         var state = -1
         var pos = -1L
         var playing = true
-        while (SystemClock.elapsedRealtime() - t0 < 15_000L) {
+        while (SystemClock.elapsedRealtime() - t0 < 45_000L) {
             inst.runOnMainSync {
                 state = p.playbackState
                 pos = p.currentPosition
