@@ -55,6 +55,12 @@
     <string name="player_error_audio">Audio kann nicht abgespielt werden</string>
     <string name="player_single_label">Single</string>
 
+    <!-- Freie Meditation -->
+    <string name="free_meditation_title">Freie Meditation</string>
+    <string name="free_meditation_description">Stille Meditation mit einem Gong am Anfang und am Ende. Länge wählen und starten.</string>
+    <string name="free_meditation_minutes">%1$d Min.</string>
+    <string name="free_meditation_start">Start</string>
+
     <!-- Navigation -->
     <string name="tab_home">Start</string>
     <string name="tab_courses">Kurse</string>

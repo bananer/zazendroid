@@ -9,10 +9,12 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
+import de.bananer.zazendroid.R
 import de.bananer.zazendroid.data.catalog.Course
 import de.bananer.zazendroid.data.catalog.Single
 import de.bananer.zazendroid.data.progress.ProgressRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,14 +26,24 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * ExoPlayer-backed [PlaybackManager]. Owns one app-scoped player; [PlaybackService]
- * wraps it in a MediaSession for the system media carousel. UI observes [state] only.
+ * ExoPlayer-backed [PlaybackManager] for catalog content, plus a
+ * [FreeMeditationPlayer] for locally synthesized gong sessions.
+ * [PlaybackService] hosts whichever player is active (see
+ * [onActivePlayerChanged]/[activePlayer]) in the media session for the system
+ * media carousel. UI observes [state] only.
  */
 class ExoPlaybackManager(
     private val appContext: Context,
     private val progress: ProgressRepository,
     private val scope: CoroutineScope,
 ) : PlaybackManager {
+
+    init {
+        // Gong.samples() renders ~1.2M samples on first use (tens of ms on the
+        // main thread); prewarm in the background so the first free-meditation
+        // start doesn't jank. The lazy is synchronized, so a racing start waits.
+        scope.launch(Dispatchers.Default) { Gong.samples() }
+    }
 
     private val _state = MutableStateFlow(PlaybackUiState())
     override val state: StateFlow<PlaybackUiState> = _state.asStateFlow()
@@ -40,6 +52,23 @@ class ExoPlaybackManager(
     private var single: Single? = null
     private var currentUnitIndex: Int = 0
     private var pollJob: Job? = null
+    private var freeMinutes: Int? = null
+    private var freeTitle: String = ""
+
+    /** Notified on the main thread whenever the session's active player must change. */
+    var onActivePlayerChanged: ((Player) -> Unit)? = null
+
+    private val freePlayer: FreeMeditationPlayer by lazy {
+        FreeMeditationPlayer(
+            onStateChanged = { publish() },
+            onError = {
+                _state.update { it.copy(error = PlaybackError.AUDIO_UNAVAILABLE, isPlaying = false, isBuffering = false) }
+            },
+        )
+    }
+
+    /** The player the media session must currently expose. */
+    val activePlayer: Player get() = if (freeMinutes != null) freePlayer else player
 
     val player: ExoPlayer by lazy {
         ExoPlayer.Builder(appContext).build().also { exo ->
@@ -86,6 +115,7 @@ class ExoPlaybackManager(
      */
     override fun queue(course: Course, startIndex: Int) {
         require(course.units.isNotEmpty()) { "course has no units" }
+        deactivateFreeMeditation()
         this.course = course
         this.single = null
         this.currentUnitIndex = startIndex.coerceIn(course.units.indices)
@@ -113,12 +143,37 @@ class ExoPlaybackManager(
         updatePolling()
     }
 
+    override fun playFreeMeditation(minutes: Int, title: String) {
+        course = null
+        single = null
+        _state.update { it.copy(error = null) }
+        if (freeMinutes == null) {
+            // Switching from catalog playback: idle the Exo chain, hand the
+            // session to the synthesizing player before audio starts.
+            player.pause()
+        }
+        freeMinutes = minutes
+        freeTitle = title
+        onActivePlayerChanged?.invoke(activePlayer)
+        freePlayer.start(minutes, title, artist = appContext.getString(R.string.app_name))
+        startPlayback()
+    }
+
+    private fun deactivateFreeMeditation() {
+        if (freeMinutes == null) return
+        freeMinutes = null
+        freeTitle = ""
+        freePlayer.reset()
+        onActivePlayerChanged?.invoke(player)
+    }
+
     override fun playSingle(single: Single) {
         queueSingle(single)
         startPlayback()
     }
 
     override fun queueSingle(single: Single) {
+        deactivateFreeMeditation()
         this.course = null
         this.single = single
         _state.update { it.copy(error = null) }
@@ -167,6 +222,7 @@ class ExoPlaybackManager(
     }
 
     override fun preloadSingle(single: Single) {
+        // Passive preload: never interrupts an active free meditation session.
         if (player.isPlaying || player.mediaItemCount > 0) return
         player.setMediaItems(
             listOf(
@@ -188,8 +244,8 @@ class ExoPlaybackManager(
     }
 
     override fun toggle() {
-        if (player.isPlaying) {
-            player.pause()
+        if (activePlayer.isPlaying) {
+            activePlayer.pause()
         } else {
             startPlayback()
         }
@@ -199,16 +255,20 @@ class ExoPlaybackManager(
      * Play with immediate UI feedback. Exo reports BUFFERING/READY async, so
      * [publish] alone leaves a dead frame on slow networks; the optimistic
      * flag covers the gap until the next player callback corrects it.
+     *
+     * Also starts position polling: the free player emits no state changes
+     * while playing, so the in-app progress would otherwise freeze.
      */
     private fun startPlayback() {
         ensureForegroundService()
-        player.play()
+        activePlayer.play()
         publish()
-        if (!player.isPlaying) _state.update { it.copy(isBuffering = true) }
+        if (!activePlayer.isPlaying) _state.update { it.copy(isBuffering = true) }
+        updatePolling()
     }
 
     override fun seekTo(positionMs: Long) {
-        player.seekTo(positionMs.coerceAtLeast(0L))
+        activePlayer.seekTo(positionMs.coerceAtLeast(0L))
         publish()
     }
 
@@ -224,38 +284,42 @@ class ExoPlaybackManager(
         )
     }
     override fun seekBy(deltaMs: Long) {
-        player.seekTo((player.currentPosition + deltaMs).coerceAtLeast(0L))
+        val p = activePlayer
+        p.seekTo((p.currentPosition + deltaMs).coerceAtLeast(0L))
         publish()
     }
 
     private fun publish() {
         val c = course
         val s = single
+        val fm = freeMinutes
         val index = if (c != null) currentUnitIndex else 0
+        val ap = activePlayer
         _state.update {
             it.copy(
                 courseId = c?.id ?: s?.id,
-                courseTitle = c?.title ?: s?.title ?: "",
+                courseTitle = c?.title ?: s?.title ?: freeTitle,
                 unit = c?.units?.getOrNull(index),
                 single = s,
                 unitIndex = index,
                 unitCount = c?.units?.size ?: if (s != null) 1 else 0,
-                isPlaying = player.isPlaying,
-                isBuffering = !player.isPlaying && player.playbackState == Player.STATE_BUFFERING,
-                positionMs = player.currentPosition.coerceAtLeast(0L),
-                durationMs = player.duration.takeIf { d -> d != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L,
+                freeMinutes = fm,
+                isPlaying = ap.isPlaying,
+                isBuffering = fm == null && !ap.isPlaying && ap.playbackState == Player.STATE_BUFFERING,
+                positionMs = ap.currentPosition.coerceAtLeast(0L),
+                durationMs = ap.duration.takeIf { d -> d != C.TIME_UNSET }?.coerceAtLeast(0L) ?: 0L,
             )
         }
     }
 
     private fun updatePolling() {
         pollJob?.cancel()
-        if (!player.isPlaying) return
+        if (!activePlayer.isPlaying) return
         pollJob = scope.launch {
             while (isActive) {
                 delay(500.milliseconds)
                 publish()
-                if (!player.isPlaying) break
+                if (!activePlayer.isPlaying) break
             }
         }
     }

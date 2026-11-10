@@ -38,6 +38,9 @@ private class FakePlaybackManager : PlaybackManager {
     override fun playSingle(single: Single) {
         calls += "playSingle:${single.id}"
     }
+    override fun playFreeMeditation(minutes: Int, title: String) {
+        calls += "playFreeMeditation:$minutes"
+    }
     override fun toggle() {
         calls += "toggle"
     }

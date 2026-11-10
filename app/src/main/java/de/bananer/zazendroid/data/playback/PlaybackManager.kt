@@ -13,6 +13,8 @@ data class PlaybackUiState(
     val single: Single? = null,
     val unitIndex: Int = 0,
     val unitCount: Int = 0,
+    /** Set during free meditation with the chosen length in minutes. */
+    val freeMinutes: Int? = null,
     val isPlaying: Boolean = false,
     /** True while Exo is loading after a play request; UI shows a spinner. */
     val isBuffering: Boolean = false,
@@ -30,6 +32,13 @@ interface PlaybackManager {
     val state: StateFlow<PlaybackUiState>
     fun play(course: Course, startIndex: Int)
     fun playSingle(single: Single)
+    /**
+     * Plays a locally synthesized track of [minutes] minutes: gong at start and
+     * end, silence between, on the AudioTrack-based [FreeMeditationPlayer].
+     * [title] is display text (catalog titles are server-provided, this one is
+     * user-facing UI text) used for the media notification.
+     */
+    fun playFreeMeditation(minutes: Int, title: String)
     /** Loads the course queue at [startIndex] and prepares, but does not start playback. */
     fun queue(course: Course, startIndex: Int)
     /** Loads a single and prepares, but does not start playback. Never touches course progress. */

@@ -8,12 +8,16 @@ import de.bananer.zazendroid.R
 import de.bananer.zazendroid.ZazenApp
 
 /**
- * Media3 session service: owns the [MediaSession] around the app-scoped
- * ExoPlayer so the system renders playback in the QS media carousel,
- * lockscreen and Android Auto. Paused state keeps a resumable card
- * (`SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR`); never
- * foregrounds while idle, so a stray notification can't appear without
- * playback. Killing a paused-away task stops the service
+ * Media3 session service: owns the [MediaSession] around whichever player is
+ * active — the app-scoped ExoPlayer for catalog content, the synthesizing
+ * [FreeMeditationPlayer] for free meditation — so the system renders playback
+ * in the QS media carousel, lockscreen and Android Auto. Player swaps go
+ * through [ExoPlaybackManager.onActivePlayerChanged] → `MediaSession.setPlayer`,
+ * keeping one notification and foreground state across the handover. Paused
+ * state keeps a resumable card
+ * (`SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR`); never foregrounds
+ * while idle, so a stray notification can't appear without playback. Killing
+ * a paused-away task stops the service
  * ([onTaskRemoved] → `pauseAllPlayersAndStopSelf`).
  */
 class PlaybackService : MediaSessionService() {
@@ -32,7 +36,11 @@ class PlaybackService : MediaSessionService() {
                 R.string.notif_channel_playback,
             ).apply { setSmallIcon(R.drawable.ic_launcher_monochrome) },
         )
-        session = MediaSession.Builder(this, manager.player).build()
+        // One session around whichever player is active: ExoPlayer for catalog
+        // content, FreeMeditationPlayer for free meditation. setPlayer keeps the
+        // notification and foreground state across the swap.
+        manager.onActivePlayerChanged = { player -> session?.setPlayer(player) }
+        session = MediaSession.Builder(this, manager.activePlayer).build()
         addSession(session!!)
         setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR)
     }
@@ -48,6 +56,10 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        // onCreate checked the type; null the callback so the app-scoped
+        // manager doesn't keep a reference to this destroyed service.
+        ((application as ZazenApp).container.playbackManager as ExoPlaybackManager)
+            .onActivePlayerChanged = null
         session?.let {
             removeSession(it)
             it.release()

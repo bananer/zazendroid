@@ -41,6 +41,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import de.bananer.zazendroid.data.favorites.FavoriteEntry
 import de.bananer.zazendroid.ui.screen.CourseDetailScreen
+import de.bananer.zazendroid.ui.screen.FreeMeditationScreen
 import de.bananer.zazendroid.ui.viewmodel.CourseDetailViewModel
 import de.bananer.zazendroid.ui.screen.CoursesScreen
 import de.bananer.zazendroid.ui.screen.HomeScreen
@@ -129,6 +130,7 @@ class MainActivity : ComponentActivity() {
                                                     when {
                                                         route.startsWith("course/") -> stringResource(R.string.nav_course)
                                                         route == "player" -> stringResource(R.string.nav_now_playing)
+                                                        route == "free-meditation" -> stringResource(R.string.free_meditation_title)
                                                         else -> ""
                                                     },
                                                 )
@@ -180,6 +182,7 @@ class MainActivity : ComponentActivity() {
                                                 moodVm.enter(today != null)
                                                 nav.navigate("mood")
                                             },
+                                            onFreeMeditationClick = { nav.navigate("free-meditation") },
                                             onContinueClick = { course, index ->
                                                 container.playbackManager.play(course, index)
                                                 nav.navigate("player")
@@ -207,6 +210,17 @@ class MainActivity : ComponentActivity() {
                                     }
                                     composable("mood") {
                                         MoodScreen(moodVm, onDone = { nav.navigateUp() })
+                                    }
+                                    composable("free-meditation") {
+                                        FreeMeditationScreen(
+                                            onStart = { minutes ->
+                                                container.playbackManager.playFreeMeditation(
+                                                    minutes,
+                                                    getString(R.string.free_meditation_title),
+                                                )
+                                                nav.navigate("player")
+                                            },
+                                        )
                                     }
                                     composable("courses") {
                                         CoursesScreen(

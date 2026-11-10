@@ -90,6 +90,7 @@ fun HomeScreen(
     vm: LibraryViewModel,
     moodComplete: Boolean,
     onMoodClick: () -> Unit,
+    onFreeMeditationClick: () -> Unit,
     onContinueClick: (course: Course, index: Int) -> Unit,
     onFavoriteClick: (entry: FavoriteEntry) -> Unit,
     onPreload: (course: Course, index: Int) -> Unit,
@@ -111,6 +112,19 @@ fun HomeScreen(
                         stringResource(
                             if (moodComplete) R.string.mood_view_history else R.string.mood_invite,
                         ),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(20.dp),
+                    )
+                }
+            }
+            item {
+                Card(
+                    onClick = onFreeMeditationClick,
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiary),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        stringResource(R.string.free_meditation_title),
                         style = MaterialTheme.typography.titleLarge,
                         modifier = Modifier.padding(20.dp),
                     )

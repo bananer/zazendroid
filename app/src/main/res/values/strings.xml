@@ -55,6 +55,12 @@
     <string name="player_error_audio">Cannot play audio</string>
     <string name="player_single_label">Single</string>
 
+    <!-- Free meditation -->
+    <string name="free_meditation_title">Free Meditation</string>
+    <string name="free_meditation_description">Silent meditation with a gong at the start and end. Choose a length and start.</string>
+    <string name="free_meditation_minutes">%1$d min</string>
+    <string name="free_meditation_start">Start</string>
+
     <!-- Navigation -->
     <string name="tab_home">Home</string>
     <string name="tab_courses">Courses</string>

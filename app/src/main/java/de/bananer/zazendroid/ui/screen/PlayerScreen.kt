@@ -55,7 +55,8 @@ import de.bananer.zazendroid.ui.viewmodel.PlayerViewModel
 fun PlayerScreen(vm: PlayerViewModel) {
     val state by vm.uiState.collectAsState()
     val isFavorite by vm.isFavorite.collectAsState()
-    val hasTrack = state.unit != null || state.single != null
+    val freeMinutes = state.freeMinutes
+    val hasTrack = state.unit != null || state.single != null || freeMinutes != null
 
     // Notification permission is asked upfront so the session service may post
     // the media card during real playback. Nothing here starts the service:
@@ -98,7 +99,8 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     color = Color.White.copy(alpha = 0.8f),
                     modifier = Modifier.weight(1f),
                 )
-                if (hasTrack) {
+                val canFavorite = state.unit != null || state.single != null
+                if (canFavorite) {
                     IconButton(onClick = { vm.toggleFavorite() }) {
                         Icon(
                             if (isFavorite) Icons.Filled.Star else Icons.Outlined.StarOutline,
@@ -110,7 +112,10 @@ fun PlayerScreen(vm: PlayerViewModel) {
                 }
             }
             Text(
-                state.unit?.title ?: state.single?.title ?: stringResource(R.string.player_nothing),
+                state.unit?.title
+                    ?: state.single?.title
+                    ?: freeMinutes?.let { stringResource(R.string.free_meditation_minutes, it) }
+                    ?: stringResource(R.string.player_nothing),
                 style = MaterialTheme.typography.headlineMedium,
                 color = Color.White,
             )
@@ -171,12 +176,15 @@ fun PlayerScreen(vm: PlayerViewModel) {
                     Text("-30s", color = Color.White)
                 }
                 Text(
-                    if (state.single != null) stringResource(R.string.player_single_label)
-                    else stringResource(
-                        R.string.unit_position,
-                        if (state.unitCount > 0) state.unitIndex + 1 else 0,
-                        state.unitCount,
-                    ),
+                    when {
+                        state.single != null -> stringResource(R.string.player_single_label)
+                        freeMinutes != null -> stringResource(R.string.free_meditation_title)
+                        else -> stringResource(
+                            R.string.unit_position,
+                            if (state.unitCount > 0) state.unitIndex + 1 else 0,
+                            state.unitCount,
+                        )
+                    },
                     color = Color.White.copy(alpha = 0.8f),
                     style = MaterialTheme.typography.labelSmall,
                 )
