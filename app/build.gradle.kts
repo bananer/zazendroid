@@ -15,8 +15,8 @@ android {
         applicationId = "de.bananer.zazendroid"
         minSdk = 35
         targetSdk = 37
-        versionCode = 300
-        versionName = "0.3"
+        versionCode = 400
+        versionName = "0.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
