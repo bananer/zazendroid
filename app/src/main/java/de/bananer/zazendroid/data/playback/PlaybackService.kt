@@ -1,9 +1,11 @@
 package de.bananer.zazendroid.data.playback
 
+import android.app.PendingIntent
 import android.content.Intent
 import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import de.bananer.zazendroid.MainActivity
 import de.bananer.zazendroid.R
 import de.bananer.zazendroid.ZazenApp
 
@@ -40,7 +42,18 @@ class PlaybackService : MediaSessionService() {
         // content, FreeMeditationPlayer for free meditation. setPlayer keeps the
         // notification and foreground state across the swap.
         manager.onActivePlayerChanged = { player -> session?.setPlayer(player) }
-        session = MediaSession.Builder(this, manager.activePlayer).build()
+        // The default notification provider uses MediaSession.sessionActivity
+        // as the notification's content intent; without one the card is not
+        // tappable. Route the tap to MainActivity, which opens the player.
+        val openPlayer = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java).setAction(MainActivity.ACTION_OPEN_PLAYER),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        session = MediaSession.Builder(this, manager.activePlayer)
+            .setSessionActivity(openPlayer)
+            .build()
         addSession(session!!)
         setShowNotificationForIdlePlayer(SHOW_NOTIFICATION_FOR_IDLE_PLAYER_AFTER_STOP_OR_ERROR)
     }

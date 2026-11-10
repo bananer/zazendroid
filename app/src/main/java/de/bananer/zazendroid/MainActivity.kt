@@ -1,5 +1,6 @@
 package de.bananer.zazendroid
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -56,6 +57,7 @@ import de.bananer.zazendroid.ui.screen.SearchScreen
 import de.bananer.zazendroid.ui.screen.SinglesScreen
 import de.bananer.zazendroid.ui.theme.ZazenDroidTheme
 import de.bananer.zazendroid.ui.viewmodel.MoodViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
 
 private data class Tab(val route: String, val labelRes: Int, val icon: ImageVector)
 
@@ -67,9 +69,16 @@ private val TABS = listOf(
 )
 
 class MainActivity : ComponentActivity() {
+
+    /** Set when the playback notification is tapped; consumed by the NavHost. */
+    private val openPlayer = MutableStateFlow(false)
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (savedInstanceState == null && intent?.action == ACTION_OPEN_PLAYER) {
+            openPlayer.value = true
+        }
         val container = (application as ZazenApp).container
         // Refresh the catalog on every foregrounding (cold start + resume).
         // Repository keeps warm Ready state until the result; first load shows
@@ -103,6 +112,16 @@ class MainActivity : ComponentActivity() {
                         }
                         true -> {
                             val nav = rememberNavController()
+                            // A playback notification tap brings the task back
+                            // to the foreground; land on the player regardless
+                            // of which tab was open.
+                            val openPlayerRequested by openPlayer.collectAsState()
+                            LaunchedEffect(openPlayerRequested, nav) {
+                                if (openPlayerRequested) {
+                                    openPlayer.value = false
+                                    nav.navigate("player") { launchSingleTop = true }
+                                }
+                            }
                             val entry by nav.currentBackStackEntryAsState()
                             val route = entry?.destination?.route
                             val onTab = route in TABS.map { it.route }
@@ -304,10 +323,22 @@ class MainActivity : ComponentActivity() {
 
     private var refreshObserver: DefaultLifecycleObserver? = null
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // singleTask: a notification tap while the app is alive lands here.
+        if (intent.action == ACTION_OPEN_PLAYER) openPlayer.value = true
+    }
+
     override fun onDestroy() {
         refreshObserver?.let { ProcessLifecycleOwner.get().lifecycle.removeObserver(it) }
         refreshObserver = null
         super.onDestroy()
+    }
+
+    companion object {
+        /** Notification content intent action; see [data.playback.PlaybackService]. */
+        const val ACTION_OPEN_PLAYER = "de.bananer.zazendroid.action.OPEN_PLAYER"
     }
 }
 
